@@ -8,6 +8,7 @@ django = "*"
 django-environ = "*"
 python-dotenv = "*"
 djangorestframework = "*"
+openai = "*"
 
 [dev-packages]
 
