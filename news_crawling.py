@@ -1,10 +1,14 @@
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 
+import time
 import requests
 import os
 import json
 import urllib
+
 
 '''
     keyword 당 관련성 높은 기사 3개의 content, originalLink, summary
@@ -17,9 +21,8 @@ load_dotenv()
 client_id=os.getenv("X_NAVER_CLIENT_ID")
 client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
 
-def get_summary(naver_url):
+def get_summary():
     pass
-
 
 def build(soup, original_link, id):
     '''
@@ -66,7 +69,7 @@ def build(soup, original_link, id):
     return news_info
 
 
-def OriginNew(json_data):
+def get_originNews(json_data):
     '''
         원본 url -> 원본 기사 추출
     '''
@@ -96,7 +99,7 @@ def OriginNew(json_data):
     return news
         
 
-def getReponseUrl(keyword):
+def get_reponseUrl(keyword):
     '''
         naver api -> 키워드 검색 시 상위 3개의 기사 추출
     '''    
@@ -131,18 +134,19 @@ def getReponseUrl(keyword):
         print(e)
         return None
 
-        
+
+'''
+    todo: 프론트에 넘겨주는 방법 
+'''    
 if __name__=='__main__':
     
     keyword="교육청"
-    print(keyword)
-    
-    json_data = getReponseUrl(keyword)
+    json_data = get_reponseUrl(keyword)
     
     if json_data == None:
         print("No Json Data")
     else:
-        res = OriginNew(json_data)
+        res = get_originNews(json_data)
         print(res)
         
 
