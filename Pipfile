@@ -9,6 +9,7 @@ django-environ = "*"
 python-dotenv = "*"
 djangorestframework = "*"
 openai = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 
