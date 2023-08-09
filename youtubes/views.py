@@ -9,7 +9,7 @@ from django.http import JsonResponse
 # Create your views here.
 
 def parsing(summary_keyword):
-    content, keyword_section = summary_keyword.split("\n\n")
+    content, keyword_section = summary_keyword.split("\n\n키워드: ")
     summary = content
     keywords = keyword_section.split(" ")
     data_dict = {
@@ -24,12 +24,14 @@ def get_summary_keywords(scripts) :
 
     messages = [
         {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
-        {"role": "user", "content": f"{scripts} Summarize this article in Korean. Additionally extract 3 keywords from the article in Korean"},
-        {"role": "assistant", "content": "[INSERT SUMMARY HERE]\n\n[INSERT KEYWORDS HERE]"}
+        {"role": "user", "content": f"{scripts}"},
+        {"role": "user", "content": "Summarize this article in Korean. Additionally extract 3 keywords from the article in Korean"},
+        {"role": "assistant", "content": "[INSERT SUMMARY HERE]\n\n키워드: [INSERT KEYWORDS HERE]"}
     ]
     response = openai.ChatCompletion.create(
         model = "gpt-3.5-turbo",
         messages = messages,
+        temperature = 0
     )
     answer = response['choices'][0]['message']['content']
     return answer
@@ -44,14 +46,19 @@ def script_extraction(video_id) :
             break
     return (scripts)
 
+# TODO LIST
+# 0. 일관된 형식으로 응답받기
+# 1. 자막 추출 안될 때
 def youtube_view(request, video_id):
     if request.method == "GET":
         if video_id:
             # 유튜브 script 추출
             scripts = script_extraction(video_id)
+            print(scripts)
             # summary와 keyword가 가져오기
             summary_keyword = get_summary_keywords(scripts)
             # parsing하고 dictionary파일로 만들기
+            print(summary_keyword)
             data_dict = parsing(summary_keyword)
             # JsonResponse 생성 및 반환
             return JsonResponse(data_dict)
