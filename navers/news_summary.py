@@ -11,6 +11,10 @@ import os
 import json
 import requests
 
+'''
+    todo: gensim summary
+'''
+
 load_dotenv()
 
 api_key_id = os.getenv('X_NCP_APIGW_API_KEY_ID')
