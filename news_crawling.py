@@ -1,71 +1,29 @@
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait as wait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
+import bs4.element
 import requests
 import os
 import json
 import urllib
-import pyautogui
-import time
 
+import news_summary
 
 '''
     keyword 당 관련성 높은 기사 3개의 content, originalLink, summary
     - 프론트에서 필요한 것: 이미지, 신문사, 제목, 기사생성일
     - 백에서 필요한 것: 기사 원문 텍스트
 '''
-# 
+
 load_dotenv()
 
 client_id=os.getenv("X_NAVER_CLIENT_ID")
 client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
 
-def get_summary(naver_url):
-    summary = {}
-    
-    caps = DesiredCapabilities().CHROME
-    caps['pageLoadStrategy'] = "none"
-    
-    options = webdriver.ChromeOptions()
-    options.add_argument('headless')
-    
-    driver = webdriver.Chrome(options= options)
-    driver.get(naver_url)
-    time.sleep(0.5)
-
-    sum_button = driver.find_element(By.ID, "_SUMMARY_BUTTON")
-    sum_button.click()
-    #wait(driver, 1).until(EC.find_element(By.ID, "_SUMMARY_BUTTON")).click()
-    time.sleep(0.5)
-    
-    summary_body = driver.find_element(By.CLASS_NAME, '_contents_body._SUMMARY_CONTENT_BODY').text
-    
-    #print(summary_body)
-    title = ""
-    content = ""
-    # 제목, 내용
-    flag = 0 
-    for line in summary_body:
-        if (flag == 0):
-            if (line == '\n'): flag = 1
-            else : title += line
-        else :
-            if (line == '\n') : continue
-            content += line
-    summary['title']= title
-    summary['content'] = content
-    
-    # print (summary )
-    driver.quit()
-    
-    return summary
-
+'''
+    todo: 예외처리
+    - 클릭 버튼이 없을 때
+'''
 
 def build(soup, original_link, id, summary):
     '''
@@ -75,7 +33,8 @@ def build(soup, original_link, id, summary):
     news_info['id'] = id
     
     title = soup.select_one('h2.media_end_head_headline').span.get_text()
-    news_info['title'] = title
+    news_info['title'] = title.replace('\n', '').replace("\t","").replace("\r","")
+    
     
     datestamp = soup.select('.media_end_head_info_datestamp_bunch')
     created_at = datestamp[0].span.get_text()
@@ -84,29 +43,32 @@ def build(soup, original_link, id, summary):
     updated_at = ""
     if len(datestamp) == 2:
         updated_at = datestamp[1].span.get_text()
-        news_info['updated_info'] = updated_at
+        news_info['updated_at'] = updated_at
     
     writer = soup.select_one('div.byline').span.get_text() # 기자 이름만? 이메일도 같이?
     news_info['writer'] = writer
     
-    '''
-        신문사 정보도 줘야 하나?
-        newspaper = soup.select_one('a.media_and_head_top_logo')
-    '''
     
-    origin_body = soup.find('article',class_='go_trans _article_content')
+    # 신문사 정보
+    # newspaper = soup.img.attrs.get('alt') if soup.img else soup.a.text.replace("\n", "").replace("\t","").replace("\r","")
+    # newspaper_imag = soup.img.attrs.get('src') if soup.img else 'default image'
     
     ''' 
         todo -> GPT한테 물어보기
             - 이미지 불러오기
             - 핵심 요약 등 strong 문구, 사진 캡션, 제보 문구 삭제 
             - '앞 \ 처리하기
+            - 신문사 정보 넘겨주기 - 썸네일로, 문구로
     '''
     
     article =""
+            
+    origin_body = soup.find('article',class_='go_trans _article_content')
     for line in origin_body.get_text():
-        if line == '\n': continue 
-        article += line
+        article += line.replace('\n', '').replace("\t","").replace("\r","")
+    
+
+    
     news_info['article']=article
     news_info['summary']=summary
     
@@ -131,8 +93,11 @@ def get_newsinfo(json_data):
             if (response.status_code == 200):
                 print("Success")
                 soup = BeautifulSoup(response.text, 'html.parser')
-                summary = get_summary(naver_url)
+                # summary = news_summary.get_summary_dynamic(naver_url)
+                summary = 'a'
                 news_info = build(soup, original_link, id, summary)
+                #summary = news_summary.get_summary_clova(news_info['title'], news_info['article'])
+                #news_info['summary']=summary
                 id += 1
                 news.append(news_info)
         except Exception as e :
@@ -147,7 +112,7 @@ def get_reponseUrl(keyword):
         naver api -> 키워드 검색 시 상위 3개의 기사 추출
     '''    
     encText=urllib.parse.quote(keyword)
-    display = 3
+    display = 1
     
     query = f"?query={encText}&start=1&display={display}&sort=sim"
     url = "https://openapi.naver.com/v1/search/news" + query
@@ -167,10 +132,12 @@ def get_reponseUrl(keyword):
         
         if rescode == 200:
             print("GET REPONSE")    
-            response_body = response.read()
-            raw_news = response_body.decode('utf-8')
-            #print(json.loads(raw_news))
-            return json.loads(raw_news)
+            response_body = response.read().decode('utf-8')
+            raw_news = json.loads(response_body)
+            if (raw_news['total']==0):
+                print("No News")
+                return
+            return raw_news
         
     except Exception as e :
         print(f"Error Code: {rescode}")
@@ -183,7 +150,7 @@ def get_reponseUrl(keyword):
 '''    
 if __name__=='__main__':
     
-    keyword="칼"
+    keyword = "칼"
     json_data = get_reponseUrl(keyword)
     
     if json_data == None:
