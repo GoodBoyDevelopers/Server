@@ -5,18 +5,7 @@ from dotenv import load_dotenv
 import os
 from django.http import HttpResponse
 from django.http import JsonResponse
-
-# Create your views here.
-
-def parsing(summary_keyword):
-    content, keyword_section = summary_keyword.split("\n\n키워드: ")
-    summary = content
-    keywords = keyword_section.split(" ")
-    data_dict = {
-                "summary": summary,
-                "keywords" : keywords,
-            }
-    return data_dict
+import json
 
 def get_summary_keywords(scripts) :
     load_dotenv()
@@ -26,42 +15,50 @@ def get_summary_keywords(scripts) :
         {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
         {"role": "user", "content": f"{scripts}"},
         {"role": "user", "content": "Summarize this article in Korean. Additionally extract 3 keywords from the article in Korean"},
-        {"role": "assistant", "content": "[INSERT SUMMARY HERE]\n\n키워드: [INSERT KEYWORDS HERE]"}
+        {"role": "assistant", "content": "Could you give it in JSON format with summary and keywords as key?"}
     ]
-    response = openai.ChatCompletion.create(
-        model = "gpt-3.5-turbo",
-        messages = messages,
-        temperature = 0
-    )
-    answer = response['choices'][0]['message']['content']
+    answer = ""
+    try :
+        response = openai.ChatCompletion.create(
+            model = "gpt-3.5-turbo",
+            messages = messages,
+            temperature = 0,
+        )
+        answer = response['choices'][0]['message']['content']
+    except Exception as e :
+        print(e)
     return answer
 
 def script_extraction(video_id) :
-    srt = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko'])
     scripts = ""
-    for s in srt :
-        cleaned_s = s["text"].replace("''", "")
-        scripts += cleaned_s
-        if len(scripts) > 1024 :
-            break
-    return (scripts)
+    try:
+        srt = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko'])
+        for s in srt :
+            cleaned_s = s["text"].replace("''", "")
+            scripts += cleaned_s
+            if len(scripts) > 1024:
+                break
+    except Exception as e:
+        print(e)
+    return scripts
 
 # TODO LIST
-# 0. 일관된 형식으로 응답받기
 # 1. 자막 추출 안될 때
 def youtube_view(request, video_id):
     if request.method == "GET":
         if video_id:
             # 유튜브 script 추출
             scripts = script_extraction(video_id)
-            print(scripts)
-            # summary와 keyword가 가져오기
-            summary_keyword = get_summary_keywords(scripts)
-            # parsing하고 dictionary파일로 만들기
-            print(summary_keyword)
-            data_dict = parsing(summary_keyword)
-            # JsonResponse 생성 및 반환
-            return JsonResponse(data_dict)
+            if scripts != "":
+                print(scripts)
+                # summary와 keyword가 가져오기
+                summary_keyword = get_summary_keywords(scripts)
+                if summary_keyword != "" :
+                    # parsing하고 dictionary파일로 만들기
+                    data_dict = json.loads(summary_keyword)
+                    return JsonResponse(data_dict)
+            else:
+                return JsonResponse({"message" : "자막 추출 실패"}, status=400)
         else:
             return HttpResponse("Missing video_id parameter", status=400)
 
