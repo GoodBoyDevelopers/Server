@@ -3,55 +3,58 @@ from youtube_transcript_api import YouTubeTranscriptApi
 import openai
 from dotenv import load_dotenv
 import os
+from django.http import HttpResponse
+from django.http import JsonResponse
 
 # Create your views here.
 
-def get_keywords(summary):
-    pass
+def parsing(summary_keyword):
+    content, keyword_section = summary_keyword.split("\n\n")
+    summary = content
+    keywords = keyword_section.split(" ")
+    data_dict = {
+                "summary": summary,
+                "keywords" : keywords,
+            }
+    return data_dict
 
-def script_summary(scripts) :
+def get_summary_keywords(scripts) :
     load_dotenv()
-
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    model = "gpt-3.5-turbo"
 
     messages = [
-        {"role": "system", "content": "너는 요약해주는 역할이야."}
+        {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
+        {"role": "user", "content": f"{scripts} Summarize this article in Korean. Additionally extract 3 keywords from the article in Korean"},
+        {"role": "assistant", "content": "[INSERT SUMMARY HERE]\n\n[INSERT KEYWORDS HERE]"}
     ]
-    for script in scripts :
-        messages.append({"role": "user", "content": f"{script}"})
-    messages.append({"role": "user", "content": "위의 글을 3줄 요약해주고, 핵심내용을 토대로 키워드 3개를 줄래?"})
-    for m in messages :
-        print(m)
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=messages,
-        temperature=0,
-        max_tokens=20000
+        model = "gpt-3.5-turbo",
+        messages = messages,
     )
-    # response = openai.ChatCompletion.create(
-    #     model = model,
-    #     messages = messages
-    # )
-
-    summary = response['choices'][0]['message']['content']
-    return summary
+    answer = response['choices'][0]['message']['content']
+    return answer
 
 def script_extraction(video_id) :
-    srt = YouTubeTranscriptApi.get_transcript("iCvmsMzlF7o", languages=['ko'])
-    scripts = []
-    temp = ""
+    srt = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko'])
+    scripts = ""
     for s in srt :
         cleaned_s = s["text"].replace("''", "")
-        temp += cleaned_s
-        if len(temp) > 1000 :
-            scripts.append(temp)
-            temp = ""
+        scripts += cleaned_s
+        if len(scripts) > 1024 :
+            break
     return (scripts)
 
-# def youtube_view(request) :
-    # video_id = request.data["video_id"]
-video_id = "rrkrvAUbU9Y"
-scripts = script_extraction(video_id)
-summary = script_summary(scripts)
-print(summary)
+def youtube_view(request, video_id):
+    if request.method == "GET":
+        if video_id:
+            # 유튜브 script 추출
+            scripts = script_extraction(video_id)
+            # summary와 keyword가 가져오기
+            summary_keyword = get_summary_keywords(scripts)
+            # parsing하고 dictionary파일로 만들기
+            data_dict = parsing(summary_keyword)
+            # JsonResponse 생성 및 반환
+            return JsonResponse(data_dict)
+        else:
+            return HttpResponse("Missing video_id parameter", status=400)
+
