@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from dotenv import load_dotenv
 
-import pyautogui
+import re
 import time
 import os
 import json
@@ -40,10 +40,9 @@ def get_summary_dynamic(naver_url):
     
     summary_body = driver.find_element(By.CLASS_NAME, '_contents_body._SUMMARY_CONTENT_BODY').text
     
-    #print(summary_body)
     title = ""
     content = ""
-    # 제목, 내용
+    # 제목, 내용 구분하기
     flag = 0 
     for line in summary_body:
         if (flag == 0):
@@ -92,8 +91,9 @@ def get_summary_clova(title, article):
             print("GET REPONSE FROM CLOVA")    
             response_body = json.loads(response.text)
             raw_news = response_body["summary"]
-            raw_news=raw_news.replace('\\', '').replace('\t','').replace('\r','').replace('\n',' ')
-            return raw_news
+            raw_news = raw_news.replace('\\', '').replace('\t',' ').replace('\r',' ').replace('\n',' ').replace("\\'", "'").replace('\\"','"')
+            news = ' '.join(raw_news.split())
+            return news
     except Exception as e :
         print(f"Summary Error Code: {rescode}")
         print(e)

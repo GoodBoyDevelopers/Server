@@ -19,6 +19,7 @@ load_dotenv()
 
 client_id=os.getenv("X_NAVER_CLIENT_ID")
 client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
+display = 3
 
 '''
     todo: 예외처리
@@ -33,7 +34,7 @@ def build(soup, original_link, id, summary):
     news_info['id'] = id
     
     title = soup.select_one('h2.media_end_head_headline').span.get_text()
-    news_info['title'] = title.replace('\n', '').replace("\t","").replace("\r","")
+    news_info['title'] = title.replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\'", "'").replace("\"",'"')
     
     
     datestamp = soup.select('.media_end_head_info_datestamp_bunch')
@@ -45,7 +46,7 @@ def build(soup, original_link, id, summary):
         updated_at = datestamp[1].span.get_text()
         news_info['updated_at'] = updated_at
     
-    writer = soup.select_one('div.byline').span.get_text() # 기자 이름만? 이메일도 같이?
+    writer = soup.select_one('div.media_end_head_journalist').em.get_text().strip() # 기자 이름만? 이메일도 같이?
     news_info['writer'] = writer
     
     
@@ -64,10 +65,14 @@ def build(soup, original_link, id, summary):
     article =""
             
     origin_body = soup.find('article',class_='go_trans _article_content')
-    for line in origin_body.get_text():
-        article += line.replace('\n', '').replace("\t","").replace("\r","")
-    
+    photos = origin_body.find_all(class_="end_photo_org")
+    for pt in photos:
+        pt.extract() 
 
+
+    article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"')
+    article = ' '.join(article.split())
+    article = '. '.join([x.strip() for x in article.split('.')])
     
     news_info['article']=article
     news_info['summary']=summary
@@ -93,11 +98,12 @@ def get_newsinfo(json_data):
             if (response.status_code == 200):
                 print("Success")
                 soup = BeautifulSoup(response.text, 'html.parser')
-                # summary = news_summary.get_summary_dynamic(naver_url)
-                summary = 'a'
+                summary = 'no summary'
+                #summary = news_summary.get_summary_dynamic(naver_url)
                 news_info = build(soup, original_link, id, summary)
-                #summary = news_summary.get_summary_clova(news_info['title'], news_info['article'])
-                #news_info['summary']=summary
+                summary = news_summary.get_summary_clova(news_info['title'], news_info['article'])
+
+                news_info['summary']=summary
                 id += 1
                 news.append(news_info)
         except Exception as e :
@@ -112,7 +118,7 @@ def get_reponseUrl(keyword):
         naver api -> 키워드 검색 시 상위 3개의 기사 추출
     '''    
     encText=urllib.parse.quote(keyword)
-    display = 1
+    
     
     query = f"?query={encText}&start=1&display={display}&sort=sim"
     url = "https://openapi.naver.com/v1/search/news" + query
@@ -150,15 +156,15 @@ def get_reponseUrl(keyword):
 '''    
 if __name__=='__main__':
     
-    keyword = "칼"
-    json_data = get_reponseUrl(keyword)
+    keyword = "잼버리"
+    try :
+        json_data = get_reponseUrl(keyword)
     
-    if json_data == None:
-        print("No Json Data")
-    else:
+
         res = get_newsinfo(json_data)
-        for n in res:
-            print(n)
+        print(res)
+    except Exception as e:
         
+        print(e)
 
     
