@@ -9,16 +9,15 @@ import json
 
 def get_summary_keywords(scripts) :
     load_dotenv()
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-
-    messages = [
-        {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
-        {"role": "user", "content": f"{scripts}"},
-        {"role": "user", "content": "Summarize this article in Korean. Additionally extract 3 keywords from the article in Korean"},
-        {"role": "assistant", "content": "Could you give it in JSON format with summary and keywords as key?"}
-    ]
-    answer = ""
     try :
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        messages = [
+            {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
+            {"role": "user", "content": f"{scripts}"},
+            {"role": "user", "content": "Summarize this article in Korean. Additionally extract 3 keywords at maximum from the article in Korean"},
+            {"role": "assistant", "content": "Could you give it in JSON format with summary and keywords as key?"}
+        ]
+        answer = ""
         response = openai.ChatCompletion.create(
             model = "gpt-3.5-turbo",
             messages = messages,
@@ -56,6 +55,7 @@ def youtube_view(request, video_id):
                 if summary_keyword != "" :
                     # parsing하고 dictionary파일로 만들기
                     data_dict = json.loads(summary_keyword)
+                    # return JsonResponse(data_dict)
                     return JsonResponse(data_dict)
             else:
                 return JsonResponse({"message" : "Scripts Extraction Failed"}, status=400)

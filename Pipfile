@@ -16,6 +16,7 @@ google-auth = "*"
 pytube3 = "*"
 pytube = "*"
 youtube-transcript-api = "*"
+selenium = "*"
 
 [dev-packages]
 
