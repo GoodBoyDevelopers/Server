@@ -209,18 +209,18 @@ class CreateNewsAPIView(generics.CreateAPIView):
     
     def create(self, request, *args, **kwargs):
         keyword_id = request.data['id']
-        keywords = Keyword.objects.get(id=keyword_id).keyword
+        keywords = Keyword.objects.get(id=keyword_id).keywords
         keyword = ' '.join(keywords)
         results = create_news(keyword)
         
         for res in results:
-            res['keyword']=keyword_id
+            res['keywords']=keyword_id
             serializer = self.get_serializer(data=res)
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
             
         headers = self.get_success_headers(serializer.data)
-        data = Article.objects.filter(keyword=keyword_id)
+        data = Article.objects.filter(keywords=keyword_id)
         serialized_data = self.get_serializer(data, many=True).data
         return Response(serialized_data, status=status.HTTP_201_CREATED, headers=headers)
 
