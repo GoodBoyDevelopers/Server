@@ -11,6 +11,11 @@ djangorestframework = "*"
 openai = "*"
 beautifulsoup4 = "*"
 django-cors-headers = "*"
+google-api-python-client = "*"
+google-auth = "*"
+pytube3 = "*"
+pytube = "*"
+youtube-transcript-api = "*"
 
 [dev-packages]
 
