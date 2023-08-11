@@ -17,7 +17,6 @@ import json
 import urllib
 import time
 
-
 '''
     keyword 당 관련성 높은 기사 3개의 content, originalLink, summary
     - 프론트에서 필요한 것: 이미지, 신문사, 제목, 기사생성일
@@ -30,7 +29,7 @@ client_id=os.getenv("X_NAVER_CLIENT_ID")
 client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
 api_key_id = os.getenv('X_NCP_APIGW_API_KEY_ID')
 api_key = os.getenv('X_NCP_APIGW_API_KEY') 
-display = 1
+display = 2
 
 def get_summary_dynamic(naver_url):
     
@@ -114,15 +113,15 @@ def get_summary_clova(title, article):
         print(e)
         return None
 
-def build(soup, id):
+def build(soup, id, origin_link):
     '''
-        output: 기사 title, creatd_at, (updated_at), wirter, article, newspaper(방송사)
+        output: 기사 title, creatd_at, (updated_at), wirter, article, newspaper(name, img), thumbnail
     '''
     news_info = {}
     news_info['id'] = id
     
     title = soup.select_one('h2.media_end_head_headline').span.get_text()
-    news_info['title'] = title.replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\'", "'").replace("\"",'"')
+    news_info['title'] = title.replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace("\\'","'")
     
     
     datestamp = soup.select('.media_end_head_info_datestamp_bunch')
@@ -137,25 +136,36 @@ def build(soup, id):
     writer = soup.select_one('div.media_end_head_journalist').em.get_text().strip().split() 
     news_info['writer'] = writer[0]
     
+    news_info['origin_link'] = origin_link
     
     # 신문사 정보
-    # newspaper = soup.img.attrs.get('alt') if soup.img else soup.a.text.replace("\n", "").replace("\t","").replace("\r","")
-    # newspaper_imag = soup.img.attrs.get('src') if soup.img else 'default image'
+    name= soup.find('a', class_="media_end_head_top_logo").img['title'] 
+    name = name if name else '신문사 정보'
+    
+    img = soup.find('a', class_="media_end_head_top_logo").img['src'] 
+    img = img if img else 'default image'
+    newspaper={}
+    newspaper['name']=name
+    newspaper['img']=img
+    
+    news_info['newspaper'] = newspaper
     
     ''' 
         todo 
             - 썸네일 이미지 불러오기
             - 핵심 요약 등 strong 문구, 제보 문구 \' 삭제하기
-            - 신문사 정보 넘겨주기 - 썸네일로, 문구로
     '''
     
     article =""
             
     origin_body = soup.find('article',class_='go_trans _article_content')
     photos = origin_body.find_all(class_="end_photo_org")
+    thumbnail = ""
     for pt in photos:
+        if thumbnail == "":
+            thumbnail = pt.img['data-src']
         pt.extract() 
-
+    news_info['thumbnail']=thumbnail
 
     article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"')
     article = ' '.join(article.split())
@@ -185,7 +195,7 @@ def get_newsinfo(json_data):
                 print("Success")
                 soup = BeautifulSoup(response.text, 'html.parser')
                 
-                news_info = build(soup, id)
+                news_info = build(soup, id, origin_link)
                 summary =get_summary_clova(news_info['title'], news_info['article'])
                 #summary = get_summary_dynamic(naver_url)
                 
@@ -226,7 +236,7 @@ def get_reponseUrl(keyword):
             raw_news = json.loads(response_body)
             if (raw_news['total'] == 0):
                 print("No News")
-                return
+                return JsonResponse({"message": "No News"}, status=204)
             return raw_news
         
     except Exception as e :
@@ -251,6 +261,6 @@ def news_view(request):
         
         except Exception as e:
             print(e)
-            return HttpResponse("Missing parameter", status=400)
+            return HttpResponse("Missing keyword parameter", status=400)
     
 

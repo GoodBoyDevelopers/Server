@@ -19,7 +19,7 @@ load_dotenv()
 
 client_id=os.getenv("X_NAVER_CLIENT_ID")
 client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
-display = 3
+display = 1
 
 '''
     todo: 예외처리
@@ -46,13 +46,21 @@ def build(soup, original_link, id, summary):
         updated_at = datestamp[1].span.get_text()
         news_info['updated_at'] = updated_at
     
+    
     writer = soup.select_one('div.media_end_head_journalist').em.get_text().strip() # 기자 이름만? 이메일도 같이?
     news_info['writer'] = writer
     
-    
     # 신문사 정보
-    # newspaper = soup.img.attrs.get('alt') if soup.img else soup.a.text.replace("\n", "").replace("\t","").replace("\r","")
-    # newspaper_imag = soup.img.attrs.get('src') if soup.img else 'default image'
+    name= soup.find('a', class_="media_end_head_top_logo").img['title'] 
+    name = name if name else '신문사 정보'
+    
+    img = soup.find('a', class_="media_end_head_top_logo").img['src'] 
+    img = img if img else 'default image'
+    newspaper={}
+    newspaper['name']=name
+    newspaper['img']=img
+    
+    news_info['newspaper'] = newspaper
     
     ''' 
         todo -> GPT한테 물어보기
@@ -66,10 +74,13 @@ def build(soup, original_link, id, summary):
             
     origin_body = soup.find('article',class_='go_trans _article_content')
     photos = origin_body.find_all(class_="end_photo_org")
+    thumbnail = ""
     for pt in photos:
+        if thumbnail == "":
+            thumbnail = pt.img['data-src']
         pt.extract() 
-
-
+    news_info['thumbnail']=thumbnail
+        
     article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"')
     article = ' '.join(article.split())
     article = '. '.join([x.strip() for x in article.split('.')])
@@ -101,7 +112,7 @@ def get_newsinfo(json_data):
                 summary = 'no summary'
                 #summary = news_summary.get_summary_dynamic(naver_url)
                 news_info = build(soup, original_link, id, summary)
-                summary = news_summary.get_summary_clova(news_info['title'], news_info['article'])
+                #summary = news_summary.get_summary_clova(news_info['title'], news_info['article'])
 
                 news_info['summary']=summary
                 id += 1
@@ -138,7 +149,7 @@ def get_reponseUrl(keyword):
         
         if rescode == 200:
             print("GET REPONSE")    
-            response_body = response.read().decode('utf-8')
+            response_body = response.read().decode('utf-8')            
             raw_news = json.loads(response_body)
             if (raw_news['total']==0):
                 print("No News")
