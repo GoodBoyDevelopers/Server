@@ -18,6 +18,9 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'x.x.x.x',
     'http://localhost:3000',
     'http://localhost:8000',
 ]
@@ -34,7 +37,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'news',
-    'youtubes'
+    'youtubes',
     'mix',
 ]
 
