@@ -32,8 +32,8 @@ def mix(youtube_scripts, article_scripts) :
 
 # TODO LIST
 # 1. 자막 추출 안될 때
-def mix_view(video_id):
-    youtube_scripts = Keyword.objects.get()
+def mix_view(articles):
+    youtube_scripts = articles[0].keyword.summary
     
     article_scripts = "백두산이 곧 터진다"
     result = mix(youtube_scripts, article_scripts)
