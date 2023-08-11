@@ -58,7 +58,7 @@ def youtube_view(request, video_id):
                     data_dict = json.loads(summary_keyword)
                     return JsonResponse(data_dict)
             else:
-                return JsonResponse({"message" : "자막 추출 실패"}, status=400)
+                return JsonResponse({"message" : "Scripts Extraction Failed"}, status=400)
         else:
             return HttpResponse("Missing video_id parameter", status=400)
 
