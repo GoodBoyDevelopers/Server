@@ -1,64 +1,30 @@
-from django.shortcuts import render
-from youtube_transcript_api import YouTubeTranscriptApi
-import openai
-from dotenv import load_dotenv
-import os
-from django.http import HttpResponse
-from django.http import JsonResponse
-import json
+from rest_framework.generics import CreateAPIView
+from rest_framework.response import Response
+from rest_framework import status
+from models.models import *
+from .serializers import *
+from .youtubes import *
+class YoutubeCreateAPIView(CreateAPIView):
+    queryset = Youtube
+    serializer_class = YoutubeSerializer
 
-def get_summary_keywords(scripts) :
-    load_dotenv()
-    try :
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        messages = [
-            {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
-            {"role": "user", "content": f"{scripts}"},
-            {"role": "user", "content": "Summarize this article in Korean. Additionally extract 3 keywords at maximum from the article in Korean"},
-            {"role": "assistant", "content": "Could you give it in JSON format with summary and keywords as key?"}
-        ]
-        answer = ""
-        response = openai.ChatCompletion.create(
-            model = "gpt-3.5-turbo",
-            messages = messages,
-            temperature = 0,
-        )
-        answer = response['choices'][0]['message']['content']
-    except Exception as e :
-        print(e)
-    return answer
-
-def script_extraction(video_id) :
-    scripts = ""
-    try:
-        srt = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko'])
-        for s in srt :
-            cleaned_s = s["text"].replace("''", "")
-            scripts += cleaned_s
-            if len(scripts) > 1024:
-                break
-    except Exception as e:
-        print(e)
-    return scripts
-
-# TODO LIST
-# 1. 자막 추출 안될 때
-def youtube_view(request, video_id):
-    if request.method == "GET":
-        if video_id:
+    def create(self, request, *args, **kwargs):
+        link = request.data["link"]
+        if link:
             # 유튜브 script 추출
-            scripts = script_extraction(video_id)
-            if scripts != "":
-                print(scripts)
-                # summary와 keyword가 가져오기
-                summary_keyword = get_summary_keywords(scripts)
-                if summary_keyword != "" :
-                    # parsing하고 dictionary파일로 만들기
-                    data_dict = json.loads(summary_keyword)
-                    # return JsonResponse(data_dict)
-                    return JsonResponse(data_dict)
-            else:
+            video_id = link.split("v=")[1]
+            print(video_id)
+            script = script_extraction(video_id)
+            if script == "":
                 return JsonResponse({"message" : "Scripts Extraction Failed"}, status=400)
-        else:
-            return HttpResponse("Missing video_id parameter", status=400)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
 
+        print(serializer.data["id"])
+        youtube = Youtube.objects.get(id=serializer.data["id"])
+        Script(script=script, youtube=youtube).save()
+        
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
