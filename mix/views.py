@@ -9,7 +9,6 @@ import openai
 def combine(youtube_scripts, article_scripts) :
     # load_dotenv()
     # openai.api_key = os.getenv("OPENAI_API_KEY")
-    openai.api_key = "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"
 
     messages = [
         {"role": "system", "content": "Your role is to analyze two articles."},
