@@ -1,5 +1,6 @@
 from django.urls import path, include
+from .views import ContentCreateAPIView
 
 urlpatterns = [
-    # path('', ),
+    path('', ContentCreateAPIView.as_view()),
 ]
