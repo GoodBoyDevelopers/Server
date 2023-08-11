@@ -60,15 +60,17 @@ class ScriptsCreateAPIView(CreateAPIView):
             video_id = link.split("v=")[1]
             print(video_id)
             script = script_extraction(video_id)
+            print(script)
             if script == "":
                 return JsonResponse({"message" : "Scripts Extraction Failed"}, status=400)
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        youtube = Youtube.objects.get(id=serializer.data["id"])
-        Script(script=script, youtube=youtube).save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            youtube = Youtube.objects.get(id=serializer.data["id"])
+            Script(script=script, youtube=youtube).save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return JsonResponse({"message" : "No Link"}, status=400)
 
 class KeywordCreateAPIView(CreateAPIView):
     queryset = Keyword.objects.all()
@@ -79,15 +81,16 @@ class KeywordCreateAPIView(CreateAPIView):
         if id:
             # 유튜브 script 추출
             youtube=Youtube.objects.get(id=id)
-            script=Script.objects.get(youtube=youtube)
+            script=Script.objects.get(youtube=youtube).script
+            print(script)
             data = json.loads(get_summary_keywords(script))
             if data == "":
                 return JsonResponse({"message" : "Summary Keywords Extraction Failed"})
             print(data)
             data["youtube"]=id
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
