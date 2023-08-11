@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 
 from .serializers import ArticleSerializer
+from models.models import Article, Keyword
 
 import bs4.element
 import requests
@@ -25,7 +26,8 @@ client_id=os.getenv("X_NAVER_CLIENT_ID")
 client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
 api_key_id = os.getenv('X_NCP_APIGW_API_KEY_ID')
 api_key = os.getenv('X_NCP_APIGW_API_KEY') 
-display = 1
+display = 2
+
 
 def get_summary_clova(title, article):
     url = 'https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize'
@@ -65,6 +67,7 @@ def get_summary_clova(title, article):
         print(f"Summary Error Code: {rescode}")
         print(e)
         return None
+
 
 def build(soup, id, origin_link):
     '''
@@ -195,25 +198,16 @@ def get_reponseUrl(keyword):
     DB에서 keyword 가져와서 webhook으로 바로 네이버 기사 결과를 프론트에 넘겨주기
     비교해주는 함수 호출하기
 '''    
-def news_view(request):
-    if request.method == 'GET':
-        keyword = request.GET['keyword']
-        print(keyword)
-        try :
-            json_data = get_reponseUrl(keyword)
-            results = get_newsinfo(json_data)
-            if results == None:
-                return JsonResponse({"message": "Failed"}, status=400)
-            else:
-                for res in results:
-                    serializer = ArticleSerializer(res)
-                    if (serializer.is_valid()):
-                        serializer.save()
-                    
-            return JsonResponse(res, safe=False)
+def naver_news(keywords):
+    keyword = ' '.join(keywords)
+    print(keyword)
+    try :
+        json_data = get_reponseUrl(keyword)
+        results = get_newsinfo(json_data)
+        return results
+    except Exception as e:
+        print(e)
+        print("No Keyword")
         
-        except Exception as e:
-            print(e)
-            return HttpResponse("Missing keyword parameter", status=400)
     
 
