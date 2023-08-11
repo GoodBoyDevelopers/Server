@@ -188,7 +188,7 @@ def get_reponseUrl(keyword):
             return raw_news
         
     except Exception as e :
-        print(f"Error Code: {rescode}")
+        print(f"Error Code:")
         print(e)
         return None
 

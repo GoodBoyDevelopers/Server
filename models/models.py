@@ -11,7 +11,7 @@ class Script(models.Model):
     youtube = models.OneToOneField(Youtube, on_delete=models.CASCADE, related_name='scripts')
     
 class Keyword(models.Model):
-    keyword = models.JSONField()
+    keywords = models.JSONField()
     summary = models.TextField()
     youtube = models.OneToOneField(Youtube, on_delete=models.CASCADE, related_name='keywords')
     
