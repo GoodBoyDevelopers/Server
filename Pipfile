@@ -9,6 +9,11 @@ django-environ = "*"
 python-dotenv = "*"
 djangorestframework = "*"
 openai = "*"
+google-api-python-client = "*"
+google-auth = "*"
+pytube3 = "*"
+pytube = "*"
+youtube-transcript-api = "*"
 
 [dev-packages]
 
