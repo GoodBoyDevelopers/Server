@@ -115,7 +115,7 @@ def get_summary_clova(title, article):
 
 def build(soup, id, origin_link):
     '''
-        output: 기사 title, creatd_at, (updated_at), wirter, article, newspaper(name, img), thumbnail
+        output: 기사 title, creatd_at, (updated_at), writer, article, newspaper(name, img), thumbnail
     '''
     news_info = {}
     news_info['id'] = id
@@ -247,6 +247,8 @@ def get_reponseUrl(keyword):
 
 '''
     todo: 프론트에 넘겨주는 방법 
+    DB에서 keyword 가져와서 webhook으로 바로 네이버 기사 결과를 프론트에 넘겨주기
+    비교해주는 함수 호출하기
 '''    
 def news_view(request):
     if request.method == 'GET':
