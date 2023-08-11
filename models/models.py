@@ -27,7 +27,7 @@ class Article(models.Model):
     
 class Content(models.Model):
     content = models.TextField()
-    script = models.OneToOneField(Script, on_delete=models.CASCADE, related_name='contents')
-    article = models.OneToOneField(Article, on_delete=models.CASCADE)
+    youtube = models.OneToOneField(Youtube, on_delete=models.CASCADE, related_name='contents')
+    
     
     

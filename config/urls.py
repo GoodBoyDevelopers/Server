@@ -20,5 +20,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('news/', include("news.urls")),
     path('youtube/', include("youtubes.urls")),
-    path('mix/', include("mix.urls"))
+    path('mix/', include("mix.urls")),
+    path('differnece/', include("difference.urls"))
 ]
