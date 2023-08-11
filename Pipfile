@@ -10,6 +10,7 @@ python-dotenv = "*"
 djangorestframework = "*"
 openai = "*"
 beautifulsoup4 = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
