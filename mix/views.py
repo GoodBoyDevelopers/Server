@@ -5,6 +5,7 @@ import os
 from django.http import HttpResponse
 from django.http import JsonResponse
 import json
+from models.models import *
 
 def mix(youtube_scripts, article_scripts) :
     load_dotenv()
@@ -31,8 +32,9 @@ def mix(youtube_scripts, article_scripts) :
 
 # TODO LIST
 # 1. 자막 추출 안될 때
-def mix_view(request):
-    youtube_scripts = "한반도에 위치한 백두산은 활화산으로, 최근들어 2025년에 폭발할 것이라는 설이 돌고 있다. 이 설은 백두산의 마지막 분화 기록이 1925년이었기 때문에 100년 주기로 폭발할 것으로 예측되고 있다. 백두산의 폭발력은 최대 7단계로 추정되며, 946년에 발생한 폭발은 7단계였다. 백두산의 폭발력은 매우 강력하며, 그 위력은 일본까지 영향을 미칠 정도였다."
+def mix_view(video_id):
+    youtube_scripts = Keyword.objects.get()
+    
     article_scripts = "백두산이 곧 터진다"
     result = mix(youtube_scripts, article_scripts)
     if result != "":
