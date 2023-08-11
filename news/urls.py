@@ -1,7 +1,7 @@
 from django.urls import path
-from .views import news_view
+from .views import CreateNewsAPIView
 
 
 urlpatterns = [
-    path('', news_view),
+    path('', CreateNewsAPIView.as_view()),
 ]
