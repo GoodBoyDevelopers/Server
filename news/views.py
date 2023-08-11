@@ -1,10 +1,14 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
+from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework import status
 
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 
+from models.models import Article, Keyword
 from .serializers import ArticleSerializer
 
 import bs4.element
@@ -25,7 +29,7 @@ client_id=os.getenv("X_NAVER_CLIENT_ID")
 client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
 api_key_id = os.getenv('X_NCP_APIGW_API_KEY_ID')
 api_key = os.getenv('X_NCP_APIGW_API_KEY') 
-display = 1
+display = 3
 
 def get_summary_clova(title, article):
     url = 'https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize'
@@ -189,31 +193,38 @@ def get_reponseUrl(keyword):
         print(e)
         return None
 
-
-'''
-    todo: 프론트에 넘겨주는 방법 
-    DB에서 keyword 가져와서 webhook으로 바로 네이버 기사 결과를 프론트에 넘겨주기
-    비교해주는 함수 호출하기
-'''    
-def news_view(request):
-    if request.method == 'GET':
-        keyword = request.GET['keyword']
-        print(keyword)
-        try :
-            json_data = get_reponseUrl(keyword)
-            results = get_newsinfo(json_data)
-            if results == None:
-                return JsonResponse({"message": "Failed"}, status=400)
-            else:
-                for res in results:
-                    serializer = ArticleSerializer(res)
-                    if (serializer.is_valid()):
-                        serializer.save()
-                    
-            return JsonResponse(res, safe=False)
+def create_news(keyword):
+    try :
+        json_data = get_reponseUrl(keyword)
+        results = get_newsinfo(json_data)
+        return results
+    
+    except Exception as e:
+        print(e)
+        return Response({"message": "Missing keyword parameter"}, status=400)
+    
+class CreateNewsAPIView(generics.CreateAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+    
+    def create(self, request, *args, **kwargs):
+        keyword_id = request.data['id']
+        keywords = Keyword.objects.get(id=keyword_id).keyword
+        keyword = ' '.join(keywords)
+        results = create_news(keyword)
         
-        except Exception as e:
-            print(e)
-            return HttpResponse("Missing keyword parameter", status=400)
+        for res in results:
+            res['keyword']=keyword_id
+            serializer = self.get_serializer(data=res)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            
+        headers = self.get_success_headers(serializer.data)
+        data = Article.objects.filter(keyword=keyword_id)
+        serialized_data = self.get_serializer(data, many=True).data
+        return Response(serialized_data, status=status.HTTP_201_CREATED, headers=headers)
+
+    
+
     
 
