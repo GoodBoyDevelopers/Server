@@ -19,7 +19,7 @@ def get_summary_keywords(scripts) :
         messages = [
             {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
             {"role": "user", "content": f"{scripts}"},
-            {"role": "user", "content": "Summarize this article in Korean. Additionally extract 3 simple keywords at maximum from the article in Korean"},
+            {"role": "user", "content": "Summarize this article in Korean. Additionally extract up to two simple keywords from the article in Korean"},
             {"role": "assistant", "content": "Could you give it in JSON format with summary and keywords as key?"}
         ]
         answer = ""
