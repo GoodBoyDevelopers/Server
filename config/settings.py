@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'news',
     'youtubes',
+    'models',
     'mix',
 ]
 
