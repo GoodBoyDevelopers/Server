@@ -65,21 +65,20 @@ def get_summary_clova(title, article):
             raw_news = response_body["summary"]
             raw_news = raw_news.replace('\\', '').replace('\t',' ').replace('\r',' ').replace('\n',' ').replace("\\'", "'").replace('\\"','"')
             news = ' '.join(raw_news.split())
-            print(news)
+            
             return news
     except Exception as e :
         print(f"Summary Error Code: {response.status_code}")
         print(e)
         return None
 
-def build(soup, id, origin_link):
+def build(soup, origin_link):
     '''
         output: 기사 title, creatd_at, (updated_at), writer, article, newspaper(name, img), thumbnail
     '''
     news_info = {}
-    news_info['id'] = id
     
-    title = soup.select_one('h2.media_end_head_headline').span.get_text()
+    title = soup.select_one('h2.media_end_head_headline').span.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
     news_info['title'] = title.replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace("\\'","'")
     
     
@@ -118,7 +117,7 @@ def build(soup, id, origin_link):
         pt.extract() 
     news_info['thumbnail']=thumbnail
 
-    article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"')
+    article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
     article = ' '.join(article.split())
     article = '. '.join([x.strip() for x in article.split('.')])
     
@@ -127,39 +126,33 @@ def build(soup, id, origin_link):
     return news_info
 
 
-def get_newsinfo(json_data):
+def get_newsinfo(item):
     '''
         output: 기사 3개 json 형태로 반환
     '''
-    id = 1
-    news = []
+    naver_url=item['link']
+    origin_link=item['originallink'] #원본 기사 링크
+    print(naver_url)
     
-    for item in json_data:
+    try : 
+        response = requests.get(naver_url)
+        if (response.status_code == 200):
+            print("Success")
+            soup = BeautifulSoup(response.text, 'html.parser')
+            news_info = build(soup, origin_link)
+            summary =get_summary_clova(news_info['title'], news_info['article'])
+            if (summary == None):
+                return 1
+            
+            news_info['summary']=summary
+            news_info['origin_link'] = origin_link
+            return news_info
         
-        naver_url=item['link']
-        origin_link=item['originallink'] #원본 기사 링크
-        print(naver_url)
-        
-        try : 
-            response = requests.get(naver_url)
-            if (response.status_code == 200):
-                print("Success")
-                soup = BeautifulSoup(response.text, 'html.parser')
-                news_info = build(soup, id, origin_link)
-                
-                summary =get_summary_clova(news_info['title'], news_info['article'])
-                print(summary)
-                
-                news_info['summary']=summary
-                news_info['origin_link'] = origin_link
-                id += 1
-                news.append(news_info)
-                
-        except Exception as e :
-            print(f"Error Code: {response.status_code}")
-            print(e)
-            return
-    return news
+    except Exception as e :
+        print(f"Error Code: {response.status_code}")
+        print(e)
+        return
+ 
         
 
 def get_reponseUrl(keyword):
@@ -168,9 +161,8 @@ def get_reponseUrl(keyword):
     '''    
     encText=urllib.parse.quote(keyword)
     start = 1
+    news = []
     cnt = 0
-    raw_news = []
-
     while cnt < news_cnt:
         
         query = f"?query={encText}&start={start}&display={display}&sort=sim"
@@ -195,23 +187,27 @@ def get_reponseUrl(keyword):
                     # naver news 링크 없는 경우 
                     naver_url = "https://n.news.naver.com/mnews/article/"
                     link =  raw["items"][0]["link"]
+                    
                     if re.match(naver_url, link):
-                        cnt += 1
-                        raw_news.append(raw["items"][0])
+                        news_info = get_newsinfo(raw["items"][0])
+                        if news_info != 1:
+                            print(news_info)
+                            cnt += 1
+                            news.append(news_info)
+                            
                     start += 1
         except Exception as e :
             rescode = response.getcode()
             print(f"Error Code: {rescode}")
             print(e)
             return None
-    return raw_news
+        
+    return news
 
 def create_news(keyword):
-
     try :        
-        json_data = get_reponseUrl(keyword)
-        results = get_newsinfo(json_data)
-        return results
+        news = get_reponseUrl(keyword)
+        return news
 
     except Exception as e:
         print(e)
