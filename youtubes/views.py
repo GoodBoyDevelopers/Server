@@ -84,9 +84,9 @@ class KeywordCreateAPIView(CreateAPIView):
             script=Script.objects.get(youtube=youtube).script
             print(script)
             data = json.loads(get_summary_keywords(script))
-            if data == "":
-                return JsonResponse({"message" : "Summary Keywords Extraction Failed"})
             print(data)
+            if data == "" or 'keywords' not in data or 'summary' not in data:
+                return JsonResponse({"message" : "Summary Keywords Extraction Failed"}, status=400)
             data["youtube"]=id
             serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
