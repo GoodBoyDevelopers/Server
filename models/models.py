@@ -23,6 +23,7 @@ class Article(models.Model):
     newspaper_thumbnail = models.URLField(null=True, blank=True)
     article = models.TextField()
     thumbnail = models.URLField(null=True, blank=True)
+    summary = models.TextField()
     keywords = models.ForeignKey(Keyword, on_delete=models.CASCADE, related_name='articles')
     
 class Content(models.Model):
