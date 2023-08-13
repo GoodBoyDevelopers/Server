@@ -24,7 +24,7 @@ def get_difference(scripts, articles) :
                 {"role": "user", "content": f"Here is the summary of article{i}. {articles[i].article}"}
             )
         messages += [
-            {"role": "user", "content": "For the output, at the first line, please show me the percentage of the similarity between the summary of Youtube video script that I gave you and the summary you just made. From the second line, please tell me the reason why you judge the similarty like that."},
+            {"role": "user", "content": "For the output, at the first line, please show me the percentage of the similarity between the summary of Youtube video script that I gave you and the summary you just made. From the second line, please tell me the reason why you judge the similarty like that. You have to return the answer in Korean."},
             {"role": "assistant", "content": "Could you give it in JSON format with summary and keywords as key?"}
         ]
         answer = ""
