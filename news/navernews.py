@@ -1,18 +1,12 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+import json
+import os
+import requests
+import urllib
+
 from django.http import JsonResponse
 
-from dotenv import load_dotenv
-from bs4 import BeautifulSoup
-
-from .serializers import ArticleSerializer
-from models.models import Article, Keyword
-
-import bs4.element
-import requests
-import os
-import json
-import urllib
 
 '''
     keyword 당 관련성 높은 기사 3개의 content, originalLink, summary

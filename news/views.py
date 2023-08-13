@@ -1,22 +1,19 @@
-from django.shortcuts import render
-from django.http import HttpResponse
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+import json
+import os
+import re
+import requests
+import urllib
+
 from django.http import JsonResponse
 from rest_framework import generics
-from rest_framework.response import Response
 from rest_framework import status
-
-from dotenv import load_dotenv
-from bs4 import BeautifulSoup
+from rest_framework.response import Response
 
 from models.models import Article, Keyword
 from .serializers import ArticleSerializer
 
-import bs4.element
-import requests
-import os
-import json
-import urllib
-import re
 
 '''
     keyword 당 관련성 높은 기사 3개의 content, originalLink, summary
@@ -32,6 +29,7 @@ api_key_id = os.getenv('X_NCP_APIGW_API_KEY_ID')
 api_key = os.getenv('X_NCP_APIGW_API_KEY')
 display = 1
 news_cnt = 3
+
 
 def get_summary_clova(title, article):
     url = 'https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize'
@@ -71,6 +69,7 @@ def get_summary_clova(title, article):
         print(f"Summary Error Code: {response.status_code}")
         print(e)
         return None
+
 
 def build(soup, origin_link):
     '''
@@ -201,8 +200,8 @@ def get_reponseUrl(keyword):
             print(f"Error Code: {rescode}")
             print(e)
             return None
-        
     return news
+
 
 def create_news(keyword):
     try :        
@@ -213,6 +212,7 @@ def create_news(keyword):
         print(e)
         return Response({"message": "Missing keyword parameter"}, status=400)
     
+
 class CreateNewsAPIView(generics.CreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
@@ -234,8 +234,3 @@ class CreateNewsAPIView(generics.CreateAPIView):
         data = Article.objects.filter(keywords=keyword_id)
         serialized_data = self.get_serializer(data, many=True).data
         return Response(serialized_data, status=status.HTTP_201_CREATED, headers=headers)
-
-    
-
-    
-
