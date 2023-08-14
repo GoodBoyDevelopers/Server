@@ -24,8 +24,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:8000",
     # 배포된 백엔드 주소, 프론트엔드 주소 추가하기
-    'port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app',
-    'you-check',
+    'https://port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app/',
+    'you-check:3000',
 ]
 
 # CSRF 설정
@@ -33,8 +33,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:8000",
     # 배포된 백엔드 주소 추가하기
-    'port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app',
-    'you-check',
+    'https://port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app/',
+    'you-check:3000',
 ]
 
 INSTALLED_APPS = [
