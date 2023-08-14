@@ -33,7 +33,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:8000",
     # 배포된 백엔드 주소 추가하기
-    'https://port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app/',
+    'https://port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app',
     'https://you-check:3000',
 ]
 
