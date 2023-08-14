@@ -15,7 +15,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     # 배포된 백엔드 주소 추가하기
     'port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app',
-    'you-check:8000',
+    'you-check',
 ]
 
 # CORS 설정
