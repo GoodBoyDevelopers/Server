@@ -168,28 +168,34 @@ def get_reponseUrl(keyword):
     
     
     query = f"?query={encText}&start=1&display={display}&sort=sim"
-    url = "https://openapi.naver.com/v1/search/news" + query
+    url = f"https://openapi.naver.com/v1/search/news{query}"
     
     request = urllib.request.Request(url)
     request.add_header("X-Naver-Client-Id", client_id)
     request.add_header("X-Naver-Client-Secret", client_secret)
-    
+    # print("aaaaaa",request)
     try:
         response = urllib.request.urlopen(request)
-        print(response)
+        # response = requests.get(url=url, headers={
+        #     "X-Naver-Client-Id": client_id,
+        #     "X-Naver-Client-Secret": client_secret
+        # })
+        # print(">>>>>>>>", response.text)
+        #rescode = response.status_code
         rescode = response.getcode()
-        
         if rescode == 200:
             print("GET REPONSE")    
             response_body = response.read().decode('utf-8')
+            
             raw_news = json.loads(response_body)
             if (raw_news['total'] == 0):
-                print("No News")
+                # print("No News")
                 return JsonResponse({"message": "No News"}, status=204)
+            
             return raw_news
         
     except Exception as e :
-        print(f"Error Code: {rescode}")
+        print(f"Error Code:")
         print(e)
         return None
 
@@ -197,10 +203,11 @@ def create_news(keyword):
     try :
         json_data = get_reponseUrl(keyword)
         results = get_newsinfo(json_data)
+        
         return results
     
     except Exception as e:
-        print(e)
+        #print(e)
         return Response({"message": "Missing keyword parameter"}, status=400)
     
 class CreateNewsAPIView(generics.CreateAPIView):
@@ -210,7 +217,8 @@ class CreateNewsAPIView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         keyword_id = request.data['id']
         keywords = Keyword.objects.get(id=keyword_id).keywords
-        keyword = ' '.join(keywords)
+        keyword = ''.join(keywords)
+        #print(keyword)
         results = create_news(keyword)
         
         for res in results:
