@@ -1,16 +1,17 @@
-from django.shortcuts import render
-from youtube_transcript_api import YouTubeTranscriptApi
-import openai
 from dotenv import load_dotenv
-import os
-from django.http import HttpResponse
-from django.http import JsonResponse
 import json
+import openai
+import os
+from youtube_transcript_api import YouTubeTranscriptApi
+
+from django.http import JsonResponse
+from rest_framework import status
+from rest_framework.generics import CreateAPIView
+from rest_framework.response import Response
+
 from models.models import *
 from .serializers import *
-from rest_framework.generics import CreateAPIView
-from rest_framework import status
-from rest_framework.response import Response
+
 
 def get_summary_keywords(scripts) :
     load_dotenv()
@@ -32,6 +33,7 @@ def get_summary_keywords(scripts) :
     except Exception as e :
         print(e)
     return answer
+
 
 def script_extraction(video_id) :
     scripts = ""
@@ -72,6 +74,7 @@ class ScriptsCreateAPIView(CreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         return JsonResponse({"message" : "No Link"}, status=400)
 
+
 class KeywordCreateAPIView(CreateAPIView):
     queryset = Keyword.objects.all()
     serializer_class = KeywordSerializer
@@ -93,4 +96,4 @@ class KeywordCreateAPIView(CreateAPIView):
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
+        
