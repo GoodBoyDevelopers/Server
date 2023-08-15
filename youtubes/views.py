@@ -96,7 +96,7 @@ class KeywordCreateAPIView(CreateAPIView):
             if Keyword.objects.filter(youtube=youtube).exists():
                 keyword = Keyword.objects.get(youtube=youtube)
                 serializer = KeywordSerializer(keyword)
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response(serializer.data, status=status.HTTP_200_OK) 
             script=Script.objects.get(youtube=youtube).script
             print(script)
             data = json.loads(get_summary_keywords(script))
@@ -108,5 +108,5 @@ class KeywordCreateAPIView(CreateAPIView):
             serializer.is_valid(raise_exception=True)
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, h`eaders=headers)
-            
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        
