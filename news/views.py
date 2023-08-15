@@ -75,19 +75,22 @@ def build(soup, origin_link):
     '''
         output: 기사 title, creatd_at, (updated_at), writer, article, newspaper(name, img), thumbnail
     '''
+    # print("뉴스 INFO!!!! in BUILD~!")
     news_info = {}
     
     title = soup.select_one('h2.media_end_head_headline').span.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
     news_info['title'] = title.replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace("\\'","'")
-    
-    
+
+    print("제목 ", title)
     datestamp = soup.select('.media_end_head_info_datestamp_bunch')
     created_at = datestamp[0].span.get_text()
     news_info['created_at'] = created_at
-    
-    writer = soup.select_one('div.media_end_head_journalist').em.get_text().strip().split() 
-    news_info['writer'] = writer[0]
-    
+    if soup.select_one('div.media_end_head_journalist'):
+        writer = soup.select_one('div.media_end_head_journalist').em.get_text().strip().split() 
+        news_info['writer'] = writer[0]
+    else :
+        news_info['writer'] = None
+
     news_info['origin_link'] = origin_link
     
     # 신문사 정보
@@ -120,8 +123,8 @@ def build(soup, origin_link):
     article = ' '.join(article.split())
     article = '. '.join([x.strip() for x in article.split('.')])
     
-    news_info['article']=article
-    
+    news_info['article']=article 
+    # print("Build 함수 끝까지 왔다!!")
     return news_info
 
 
@@ -136,10 +139,14 @@ def get_newsinfo(item):
     try : 
         response = requests.get(naver_url)
         if (response.status_code == 200):
-            print("Success")
+            # print("Success")
             soup = BeautifulSoup(response.text, 'html.parser')
             news_info = build(soup, origin_link)
+            # print(news_info)
+            print("build 성공!!!!!")
             summary =get_summary_clova(news_info['title'], news_info['article'])
+            print("summary 성공!!")
+            print(summary)
             if (summary == None):
                 return 1
             
@@ -173,12 +180,9 @@ def get_reponseUrl(keyword):
     
         try:
             response = urllib.request.urlopen(request)
-           
             if response.getcode() == 200:
-                print("GET REPONSE")
                 response_body = response.read().decode('utf-8')
                 raw = json.loads(response_body)
-                
                 if (raw['total'] == 0):
                     print("No News")
                     return JsonResponse({"message": "No News"}, status=204)
@@ -190,7 +194,8 @@ def get_reponseUrl(keyword):
                     if re.match(naver_url, link):
                         news_info = get_newsinfo(raw["items"][0])
                         if news_info != 1:
-                            print(news_info)
+                            # print("news_info final~~~~")
+                            # print(news_info)
                             cnt += 1
                             news.append(news_info)
                             
@@ -200,6 +205,8 @@ def get_reponseUrl(keyword):
             print(f"Error Code: {rescode}")
             print(e)
             return None
+    # print("뉴스 출력 --------------")
+    print(news)
     return news
 
 
@@ -223,7 +230,8 @@ class CreateNewsAPIView(generics.CreateAPIView):
         print(keywords)
         keyword = ' '.join(keywords)
         results = create_news(keyword)
-        
+        if results == None :
+            return Response({"message" : "crawling failed"}, status=400)
         for res in results:
             res['keywords']=keyword_id
             serializer = self.get_serializer(data=res)
