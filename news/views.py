@@ -14,6 +14,8 @@ from rest_framework.response import Response
 from models.models import Article, Keyword
 from .serializers import ArticleSerializer
 
+import openai
+
 
 '''
     keyword 당 관련성 높은 기사 3개의 content, originalLink, summary
@@ -30,52 +32,43 @@ api_key = os.getenv('X_NCP_APIGW_API_KEY')
 display = 1
 news_cnt = 3
 
+def cut_article(article) :
+    if len(article) > 2000:
+        truncated_string = article[:2000]
+        return truncated_string
+    else:
+        return article
 
-def get_summary_clova(title, article):
-    url = 'https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize'
-
-    headers = {
-        "X-NCP-APIGW-API-KEY-ID": api_key_id,
-        "X-NCP-APIGW-API-KEY":api_key,
-        "Content-Type": "application/json"
-    }
-    
-    data = {}
-    document = {
-            "title": title,
-            "content": article
-    }
-    option = {
-        "language" : "ko",
-        "model": "news",
-        "tone": "0",
-        "summaryCount" : "3"
-    }    
-    
-    data['document'] = document
-    data['option'] = option
-
+def get_summary_article(article):
+    print(article)
+    load_dotenv()
     try :
-        response = requests.post(url, data = json.dumps(data), headers=headers)
-        if response.status_code == 200:
-            print("GET REPONSE FROM CLOVA")
-            response_body = json.loads(response.text)
-            raw_news = response_body["summary"]
-            raw_news = raw_news.replace('\\', '').replace('\t',' ').replace('\r',' ').replace('\n',' ').replace("\\'", "'").replace('\\"','"')
-            news = ' '.join(raw_news.split())
-            
-            return news
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+        article = cut_article(article)
+        messages = [
+            {"role": "system", "content": "Your role is to summarize the article"},
+            {"role": "user", "content": f"{article}"},
+            {"role": "user", "content": "Summarize this article in Korean. "},
+            {"role": "assistant", "content": "Could you give it in 'JSON format' with 'summary' as key?"}
+        ]
+
+        answer = ""
+        response = openai.ChatCompletion.create(
+            model = "gpt-3.5-turbo",
+            messages = messages,
+            temperature = 0,
+        )
+        answer = response['choices'][0]['message']['content']
     except Exception as e :
-        print(f"Summary Error Code: {response.status_code}")
         print(e)
-        return None
+    return answer
+
 
 
 def build(soup, origin_link):
     '''
         output: 기사 title, creatd_at, (updated_at), writer, article, newspaper(name, img), thumbnail
     '''
-    # print("뉴스 INFO!!!! in BUILD~!")
     news_info = {}
     
     title = soup.select_one('h2.media_end_head_headline').span.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
@@ -89,7 +82,7 @@ def build(soup, origin_link):
         writer = soup.select_one('div.media_end_head_journalist').em.get_text().strip().split() 
         news_info['writer'] = writer[0]
     else :
-        news_info['writer'] = None
+        news_info['writer'] = "anonymous"
 
     news_info['origin_link'] = origin_link
     
@@ -144,13 +137,11 @@ def get_newsinfo(item):
             news_info = build(soup, origin_link)
             # print(news_info)
             print("build 성공!!!!!")
-            summary =get_summary_clova(news_info['title'], news_info['article'])
-            print("summary 성공!!")
-            print(summary)
-            if (summary == None):
-                return 1
-            
-            news_info['summary']=summary
+            summary = json.loads(get_summary_article(news_info['article']))
+            if summary == "" or sorted(summary.keys()) != ["summary"]:
+                return False
+            print(summary)            
+            news_info['summary']=summary["summary"]
             news_info['origin_link'] = origin_link
             return news_info
         
@@ -186,27 +177,22 @@ def get_reponseUrl(keyword):
                 if (raw['total'] == 0):
                     print("No News")
                     return JsonResponse({"message": "No News"}, status=204)
-                else:
                     # naver news 링크 없는 경우 
-                    naver_url = "https://n.news.naver.com/mnews/article/"
-                    link =  raw["items"][0]["link"]
-                    
-                    if re.match(naver_url, link):
-                        news_info = get_newsinfo(raw["items"][0])
-                        if news_info != 1:
-                            # print("news_info final~~~~")
-                            # print(news_info)
-                            cnt += 1
-                            news.append(news_info)
-                            
-                    start += 1
+                naver_url = "https://n.news.naver.com/mnews/article/"
+                link =  raw["items"][0]["link"]
+                if re.match(naver_url, link):
+                    news_info = get_newsinfo(raw["items"][0])
+                    if news_info == False :
+                        continue
+                    cnt += 1
+                    news.append(news_info)
+                start += 1
         except Exception as e :
             rescode = response.getcode()
             print(f"Error Code: {rescode}")
             print(e)
             return None
     # print("뉴스 출력 --------------")
-    print(news)
     return news
 
 
