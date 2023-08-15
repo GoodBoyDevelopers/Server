@@ -84,6 +84,10 @@ class KeywordCreateAPIView(CreateAPIView):
         if id:
             # 유튜브 script 추출
             youtube=Youtube.objects.get(id=id)
+            if Keyword.objects.filter(youtube=youtube).exists():
+                keyword = Keyword.objects.get(youtube=youtube)
+                serializer = KeywordSerializer(keyword)
+                return Response(serializer.data, status=status.HTTP_200_OK) 
             script=Script.objects.get(youtube=youtube).script
             print(script)
             data = json.loads(get_summary_keywords(script))
