@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     'news',
     'youtubes',
     'models',
-    'mix',
 ]
 
 MIDDLEWARE = [

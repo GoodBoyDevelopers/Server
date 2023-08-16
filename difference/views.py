@@ -56,7 +56,7 @@ class ContentCreateAPIView(CreateAPIView):
 
         data = json.loads(content)
         if data == "" or sorted(data.keys()) != ["percentage", "reason"]:
-            return JsonResponse({"message" : "Summary Keywords Extraction Failed"}, status=400)
+            return JsonResponse({"message" : "Content Extraction Failed"}, status=400)
         
         if str(data['percentage'])[-1] != '%':
             data['percentage'] = str(data['percentage']) + '%'

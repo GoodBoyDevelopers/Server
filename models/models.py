@@ -27,8 +27,6 @@ class Article(models.Model):
     keywords = models.ForeignKey(Keyword, on_delete=models.CASCADE, related_name='articles')
     
 class Content(models.Model):
-    content = models.TextField()
+    percentage = models.TextField()
+    reason = models.TextField()
     youtube = models.OneToOneField(Youtube, on_delete=models.CASCADE, related_name='contents')
-    
-    
-    
