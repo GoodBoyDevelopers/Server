@@ -175,6 +175,7 @@ class CreateNewsAPIView(generics.CreateAPIView):
             # 크롤링 실패
             return JsonResponse({"message": "No News"}, status=204)
 
+
         for res in results:
             res['keywords']=keyword_id
             serializer = self.get_serializer(data=res)
