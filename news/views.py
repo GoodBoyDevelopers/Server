@@ -63,6 +63,9 @@ def get_summary_article(article):
     except Exception as e :
         print(e)
     return answer
+def build_sports(soup, origin_link):
+    pass
+
 
 def get_newsinfo(item):
     '''
@@ -128,7 +131,7 @@ def get_reponseUrl(keyword):
                 if (raw['total'] == 0):
                     print("No News")
                     return False
-                print(raw['items'][0]['title'])
+                #print(raw['items'][0]['title'])
                 # naver news 링크 없는 경우 
                 naver_url = "https://n.news.naver.com/mnews/article/"
                 link =  raw["items"][0]["link"]
@@ -153,17 +156,6 @@ def get_reponseUrl(keyword):
     return news
 
 
-def create_news(keyword):
-    try :        
-        news = get_reponseUrl(keyword)
-        # 기사가 없거나 오류가 나면 False를 반환할 것
-        return news
-
-    except Exception as e:
-        #print(e)
-        return Response({"message": "Missing keyword parameter"}, status=400)
-    
-
 class CreateNewsAPIView(generics.CreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
@@ -174,15 +166,16 @@ class CreateNewsAPIView(generics.CreateAPIView):
         print(keywords)
         
         keyword = ' '.join(keywords)
-        results = create_news(keyword)
-        
-        if results == None :
-            # 크롤링 실패
-            return Response({"message" : "crawling failed"}, status=400)
-        elif results == False:
-            # 크롤링할 기사가 없을 때
-            return JsonResponse({"message": "No News"}, status=204)
-        
+        results = ''
+        try:
+            results=get_reponseUrl(keyword)
+            if results == None :
+                # 크롤링 실패
+                return JsonResponse({"message": "No News"}, status=204)
+                
+        except Exception as e:
+            return JsonResponse({"message" : "crawling failed"}, status=400)
+
         for res in results:
             res['keywords']=keyword_id
             serializer = self.get_serializer(data=res)

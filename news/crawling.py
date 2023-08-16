@@ -92,7 +92,7 @@ def build_ordinary(soup, origin_link):
         origin_body = soup.find('article',class_='go_trans _article_content')
     except Exception as e :
         print(e)
-        origin_body = ""
+        #origin_body = ""
         return False
 
     # 기사
@@ -104,6 +104,7 @@ def build_ordinary(soup, origin_link):
         news_info['article'] = article
     except Exception as e:
         print(e)
+        #article= ""
         return False
     
     # 여기 아래는 없어도 됨
