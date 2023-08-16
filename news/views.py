@@ -115,6 +115,7 @@ def get_newsinfo(item):
     '''
     link=item['link']
     origin_link=item['originallink'] #원본 기사 링크
+    print(link)
     naver_url = "https://n.news.naver.com/mnews/article/"
     sports_url = "https://sports.news.naver.com/news"
     
@@ -125,12 +126,14 @@ def get_newsinfo(item):
         soup = BeautifulSoup(response.text, 'html.parser')    
         # 연예
         if (link[-3:]=='106'):
+            print("연예")
             news_info = build_entertain(soup, origin_link)
         # 정치 등등
         elif link[-3:] in ['100', '101', '102', '103', '104', '105'] :
+            print("정치")
             news_info = build_ordinary(soup, origin_link)
-        print(news_info)
-        
+        else:
+            return False        
         # 스포츠
     elif re.match(sports_url, link):
         response = requests.get(link)
