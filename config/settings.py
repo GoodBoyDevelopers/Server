@@ -13,6 +13,8 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 ALLOWED_HOSTS = [
     'http://127.0.0.1:8000',
     '127.0.0.1',
+    'port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app',
+    'you-check:8000',
     # 배포된 백엔드 주소 추가하기
 ]
 
@@ -22,6 +24,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:8000",
     # 배포된 백엔드 주소, 프론트엔드 주소 추가하기
+    'https://port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app/',
+    'https://you-check:8000/',
 ]
 
 # CSRF 설정
@@ -29,6 +33,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:8000",
     # 배포된 백엔드 주소 추가하기
+    'https://port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app/',
+    'https://you-check:8000/',
 ]
 
 INSTALLED_APPS = [
