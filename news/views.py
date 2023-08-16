@@ -33,8 +33,8 @@ api_key = os.getenv('X_NCP_APIGW_API_KEY')
 
 
 def cut_article(article) :
-    if len(article) > 2000:
-        truncated_string = article[:2000]
+    if len(article) > 1900:
+        truncated_string = article[:1900]
         return truncated_string
     else:
         return article
@@ -87,8 +87,8 @@ def get_summary_clova(title, article):
     option = {
         "language" : "ko",
         "model": "news",
-        "tone": "0",
-        "summaryCount" : "3"
+        "tone": 0,
+        "summaryCount" : 5
     }    
     
     data['document'] = document
@@ -97,6 +97,7 @@ def get_summary_clova(title, article):
     try :
         response = requests.post(url, data = json.dumps(data), headers=headers)
         rescode = response.status_code
+        print(">>>>>>>>>>>>>>>", response.json())
         if rescode == 200:
             print("GET REPONSE FROM CLOVA")    
             response_body = json.loads(response.text)
@@ -150,10 +151,10 @@ def get_newsinfo(item):
         return False
     print(news_info)
     summary = get_summary_clova(news_info['title'], news_info['article'])
-    if summary == False or summary == "":
+    if summary == False or summary == None:
         return False
     print(summary)            
-    news_info['summary']=summary["summary"]
+    news_info['summary']=summary
     return news_info
 
 def extract_news(items) :
