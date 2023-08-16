@@ -121,7 +121,7 @@ def get_newsinfo(item):
         return False
     
     summary = get_summary_clova(news_info['title'], news_info['article'])
-    if summary == False or summary == "":
+    if summary == False or summary == "":   
         return False
     print(summary)
     news_info['summary'] = summary
