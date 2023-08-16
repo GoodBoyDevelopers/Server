@@ -26,6 +26,7 @@ CORS_ALLOWED_ORIGINS = [
     # 배포된 백엔드 주소, 프론트엔드 주소 추가하기
     'https://port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app',
     'https://you-check:8000',
+    'https://clients-tan-mu.vercel.app',
 ]
 
 # CSRF 설정
@@ -35,6 +36,7 @@ CSRF_TRUSTED_ORIGINS = [
     # 배포된 백엔드 주소 추가하기
     'https://port-0-you-check-ac2nllazbxp3.sel3.cloudtype.app',
     'https://you-check:8000',
+    'https://clients-tan-mu.vercel.app',
 ]
 
 INSTALLED_APPS = [
