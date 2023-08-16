@@ -107,7 +107,7 @@ def get_summary_clova(title, article):
     except Exception as e :
         print(f"Summary Error Code: {rescode}")
         print(e)
-        return None
+        return False
 
 def get_newsinfo(item):
     '''
@@ -150,7 +150,7 @@ def get_newsinfo(item):
         return False
     
     summary = get_summary_clova(news_info['title'], news_info['article'])
-    if summary == None or summary == "":
+    if summary == False or summary == "":
         return False
     print(summary)
     news_info['summary'] = summary
