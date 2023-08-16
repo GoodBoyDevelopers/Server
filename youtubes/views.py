@@ -21,7 +21,7 @@ def get_summary_keywords(scripts) :
             {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
             {"role": "system", "content": "I'm trying to search for articles using the Naver API through the very keywords you extracted. Can you extract keywords by referring to this point?"},
             {"role": "user", "content": f"{scripts}"},
-            {"role": "user", "content": "Summarize this article in Korean. Additionally extract up to two keywords from the article in Korean"},
+            {"role": "user", "content": "Summarize this article in Korean. Additionally extract up to three keywords from the article in Korean"},
             {"role": "assistant", "content": "Could you give it in JSON format with 'summary' and 'keywords' as key?"}
         ]
 
@@ -113,6 +113,8 @@ class KeywordCreateAPIView(CreateAPIView):
             print(data)
             if data == "" or sorted(data.keys()) != ["keywords", "summary"]:
                 return JsonResponse({"message" : "Summary Keywords Extraction Failed"}, status=400)
+            if len(data["keywords"]) > 3 :
+                data["keywords"] = data["keywords"][:3]
             data["youtube"]=id
             serializer = self.get_serializer(data=data)
             serializer.is_valid(raise_exception=True)
