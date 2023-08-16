@@ -55,7 +55,7 @@ INSTALLED_APPS = [
     'news',
     'youtubes',
     'models',
-    'difference'
+    'difference',
 ]
 
 MIDDLEWARE = [

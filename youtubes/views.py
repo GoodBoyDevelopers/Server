@@ -19,10 +19,12 @@ def get_summary_keywords(scripts) :
         openai.api_key = os.getenv("OPENAI_API_KEY")
         messages = [
             {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
+            {"role": "system", "content": "I'm trying to search for articles using the Naver API through the very keywords you extracted. Can you extract keywords by referring to this point?"},
             {"role": "user", "content": f"{scripts}"},
-            {"role": "user", "content": "Summarize this article in Korean. Additionally extract up to two simple keywords from the article in Korean"},
-            {"role": "assistant", "content": "Could you give it in JSON format with summary and keywords as key?"}
+            {"role": "user", "content": "Summarize this article in Korean. Additionally extract up to two keywords from the article in Korean"},
+            {"role": "assistant", "content": "Could you give it in JSON format with 'summary' and 'keywords' as key?"}
         ]
+
         answer = ""
         response = openai.ChatCompletion.create(
             model = "gpt-3.5-turbo",
@@ -84,6 +86,10 @@ class KeywordCreateAPIView(CreateAPIView):
         if id:
             # 유튜브 script 추출
             youtube=Youtube.objects.get(id=id)
+            if Keyword.objects.filter(youtube=youtube).exists():
+                keyword = Keyword.objects.get(youtube=youtube)
+                serializer = KeywordSerializer(keyword)
+                return Response(serializer.data, status=status.HTTP_200_OK) 
             script=Script.objects.get(youtube=youtube).script
             print(script)
             data = json.loads(get_summary_keywords(script))
