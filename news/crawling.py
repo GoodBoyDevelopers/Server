@@ -116,7 +116,7 @@ def build_sports(soup, origin_link):
     #작성자
     try:
         writer = soup.select_one("p.byline")
-        writer.get_text().strip().split()[0]  
+        news_info['writer'] = writer.get_text().strip().split()[0]  
     except Exception as e :
         news_info['writer'] = 'anonymous'
         print(e)
