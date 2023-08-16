@@ -109,6 +109,52 @@ def get_summary_clova(title, article):
         print(e)
         return False
 
+def get_summary_clova(title, article):
+    url = 'https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize'
+
+    headers = {
+        "X-NCP-APIGW-API-KEY-ID": api_key_id,
+        "X-NCP-APIGW-API-KEY":api_key,
+        "Content-Type": "application/json"
+    }
+    
+    # 2000자 미만으로 뉴스 기사 끊기
+    article = cut_article(article)
+
+    # 끊긴 뉴스기사에서 마지막 "." 뒤 내용 자르기
+    index = article.rfind('.')
+    article = article[:index+1]
+
+    data = {}
+    document = {
+            "title": title,
+            "content": article
+    }
+    option = {
+        "language" : "ko",
+        "model": "news",
+        "tone": "0",
+        "summaryCount" : "3"
+    }    
+    
+    data['document'] = document
+    data['option'] = option
+
+    try :
+        response = requests.post(url, data = json.dumps(data), headers=headers)
+        rescode = response.status_code
+        if rescode == 200:
+            print("GET REPONSE FROM CLOVA")    
+            response_body = json.loads(response.text)
+            raw_news = response_body["summary"]
+            raw_news = raw_news.replace('\\', '').replace('\t',' ').replace('\r',' ').replace('\n',' ').replace("\\'", "'").replace('\\"','"')
+            news = ' '.join(raw_news.split())
+            return news
+    except Exception as e :
+        print(f"Summary Error Code: {rescode}")
+        print(e)
+        return False
+
 def get_newsinfo(item):
     '''
         output: 기사 3개 json 형태로 반환
