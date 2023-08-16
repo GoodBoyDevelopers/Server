@@ -97,7 +97,6 @@ def build_sports(soup, origin_link):
     except Exception as e:
         print(e)
         return False
-
     # 제목
     try:
         title = soup.select_one("h4.title").get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")

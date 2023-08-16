@@ -69,6 +69,7 @@ def get_newsinfo(item):
     '''
     link=item['link']
     origin_link=item['originallink'] #원본 기사 링크
+    print(link)
     naver_url = "https://n.news.naver.com/mnews/article/"
     sports_url = "https://sports.news.naver.com/news"
     
@@ -78,19 +79,22 @@ def get_newsinfo(item):
             return False
         soup = BeautifulSoup(response.text, 'html.parser')    
         # 연예
-        if (naver_url[-3:]=='106'):
+        if (link[-3:]=='106'):
+            print("연예")
             news_info = build_entertain(soup, origin_link)
         # 정치 등등
-        elif naver_url[-3:] in ['100', '101', '102', '103', '104', '105'] :
+        elif link[-3:] in ['100', '101', '102', '103', '104', '105'] :
+            print("정치")
             news_info = build_ordinary(soup, origin_link)
-        print(news_info)
-        
+        else:
+            return False        
         # 스포츠
     elif re.match(sports_url, link):
         response = requests.get(link)
         if (response.status_code != 200):
             return False
         soup = BeautifulSoup(response.text, 'html.parser')
+        print("hi")
         news_info = build_sports(soup, origin_link)
         print(news_info)
     else :
@@ -99,7 +103,7 @@ def get_newsinfo(item):
     if news_info == False :
         # 예외 : 잘 안 뽑혔을 때 ( 아티클 추출 실패 )
         return False
-    
+    print(news_info)
     summary = json.loads(get_summary_article(news_info['article']))
     if summary == "" or sorted(summary.keys()) != ["summary"]:
         # 예외 : 뉴스 요약본 안 뽑힐 때
