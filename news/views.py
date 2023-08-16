@@ -1,10 +1,11 @@
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import json
 import os
 import re
-import requests
 import urllib
+
+from bs4 import BeautifulSoup
+import requests
 
 from django.http import JsonResponse
 from rest_framework import generics
@@ -15,7 +16,7 @@ from models.models import Article, Keyword
 from .serializers import ArticleSerializer
 
 import openai
-
+from .crawling import *
 
 '''
     keyword 당 관련성 높은 기사 3개의 content, originalLink, summary
@@ -30,7 +31,7 @@ client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
 api_key_id = os.getenv('X_NCP_APIGW_API_KEY_ID')
 api_key = os.getenv('X_NCP_APIGW_API_KEY')
 display = 1
-news_cnt = 5
+news_cnt = 3
 
 def cut_article(article) :
     if len(article) > 2000:
@@ -65,158 +66,6 @@ def get_summary_article(article):
 def build_sports(soup, origin_link):
     pass
 
-def build_entertain(soup, origin_link):
-    news_info = {}
-    # 제목
-    if soup.select_one("h2.end_tit"):
-        title = soup.select_one("h2.end_tit").get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
-        news_info['title'] = title
-    else:
-        news_info['title'] = "title Unknown"
-
-    
-    # 생성일
-    if soup.select_one('span.author'):
-        created_at = soup.select_one('span.author')
-        if created_at.em:
-            news_info['created_at'] = created_at.em.get_text()
-        else:
-            news_info['created_at'] = 'date Unkown'
-
-    # 기자
-    if soup.select_one("div.byline"):
-        writer = soup.select_one("div.byline")
-        if writer.span:
-            news_info['writer'] = writer.get_text().strip().split()[0] 
-        else:
-            news_info['writer'] = 'Anonymous'
-
-    
-    # 신문사 정보
-    if soup.find('a', class_="press_logo").img['alt']:
-        name = soup.find('a', class_="press_logo").img['alt']
-        news_info['newspaper_name'] = name
-    else:
-        news_info['newspaper_name'] = 'newspaper unknown'
-
-    
-    if soup.find('a', class_="press_logo").img['src']:
-        img = soup.find('a', class_="press_logo").img['src']
-        news_info['newspaper_thumbnail'] =img
-    else:
-        news_info['newspaper_thumbnail'] = 'http://via.placeholder.com/32x32'
-
-        
-    # 원본 기사 링크
-    news_info['origin_link'] = origin_link
-
-    article =""
-            
-    origin_body = soup.select_one('div.end_body_wrp')
-    photos = origin_body.find_all(class_="end_photo_org")
-
-    if photos :
-        thumbnail = ""
-        for pt in photos:
-            if thumbnail == "":
-                thumbnail = pt.img['src']
-            pt.extract() 
-        news_info['thumbnail']=thumbnail
-    else:
-        news_info['thumbnail'] = 'http://via.placeholder.com/32x32'
-
-    if origin_body:
-        article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
-        article = ' '.join(article.split())
-        article = '. '.join([x.strip() for x in article.split('.')])
-    else:
-        article= None
-        
-    news_info['article']=article 
-    # print("entertain success!",news_info)
-    
-    return news_info
-
-def build_ordinary(soup, origin_link):
-    '''
-        output: 기사 title, creatd_at, (updated_at), writer, article, newspaper(name, img), thumbnail
-    '''
-    news_info = {}
-    
-    # 제목
-    if soup.select_one('h2.media_end_head_headline'):
-        title = soup.select_one('h2.media_end_head_headline').get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
-        news_info['title'] = title
-    else: 
-        news_info['title'] = "title unknown"
-    print(news_info['title'])
-    
-    #생성일 - span 오류 처리해야 하는데....왜 안 먹히냐
-    if soup.select_one('div.media_end_head_info_datestamp_bunch'):
-        created_at = soup.select_one('div.media_end_head_info_datestamp_bunch')
-        if created_at.span:
-            news_info['created_at'] = created_at.span.get_text() 
-    else:
-        news_info['created_at'] = 'date unknown'
-    print(news_info['created_at'])
-
-    #작성자
-    if soup.select_one('em.media_end_head_journalist_name'):
-        writer  = soup.select_one('div.media_end_head_journalist')
-        news_info['writer'] = writer.get_text().strip().split()[0]  
-    else:
-        news_info['writer'] = 'anonymous'
-    print(news_info['writer'])
-    
-    # 원본 기사 링크
-    news_info['origin_link'] = origin_link
-    
-    # 신문사 정보
-
-    if soup.find('a', class_="media_end_head_top_logo").img['title']:
-        name = soup.find('a', class_="media_end_head_top_logo").img['title']
-        news_info['newspaper_name'] = name
-    else:
-        news_info['newspaper_name'] = 'newspaper unknown'
-    
-    if soup.find('a', class_="media_end_head_top_logo").img['src']:
-        img = soup.find('a', class_="media_end_head_top_logo").img['src']
-        news_info['newspaper_thumbnail'] =img
-    else:
-        news_info['newspaper_thumbnail'] = 'http://via.placeholder.com/32x32'
-    
-    ''' 
-        todo 
-            - 썸네일 이미지 불러오기
-            - 핵심 요약 등 strong 문구, 제보 문구 \' 삭제하기
-    '''
-    
-    article =""
-            
-    origin_body = soup.find('article',class_='go_trans _article_content')
-    photos = origin_body.find_all(class_="end_photo_org")
-    
-    if photos :
-        thumbnail = ""
-        for pt in photos:
-            if thumbnail == "":
-                thumbnail = pt.img['data-src']
-            pt.extract() 
-        news_info['thumbnail']=thumbnail
-    else:
-        news_info['thumbnail'] = 'http://via.placeholder.com/32x32'
-
-    if origin_body:
-        article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
-        article = ' '.join(article.split())
-        article = '. '.join([x.strip() for x in article.split('.')])
-    else:
-        article= None
-        
-    news_info['article']=article 
-    # print("Build 함수 끝까지 왔다!!")
-    return news_info
-
 
 def get_newsinfo(item):
     '''
@@ -227,37 +76,33 @@ def get_newsinfo(item):
     print(naver_url)
     
     try :
-        #naver_url="https://n.news.naver.com/mnews/article/008/0004925361?sid=106"
         response = requests.get(naver_url)
         if (response.status_code == 200):
             soup = BeautifulSoup(response.text, 'html.parser')
-
-            
             if (naver_url[-3:]=='106'):
                 news_info = build_entertain(soup, origin_link)
-            else:
+            elif naver_url[-3:] in ['100', '101', '102', '103', '104', '105'] :
                 news_info = build_ordinary(soup, origin_link)
-                
-            if news_info == None or news_info['article'] == None:
+            else :
+                # 예외 : 뉴스 형식 다를 때
+                return False
+            if news_info == False :
+                # 예외 : 잘 안 뽑혔을 때 ( 아티클 추출 실패 )
                 return False
             print(news_info)
             
-            # summary = json.loads(get_summary_article(news_info['article']))
-            # if summary == "" or sorted(summary.keys()) != ["summary"]:
-            #     return False
-            # print(summary)            
-            
-            # news_info['summary']=summary["summary"]
-            news_info['summary'] = 'summary'
-            news_info['origin_link'] = origin_link
+            summary = json.loads(get_summary_article(news_info['article']))
+            if summary == "" or sorted(summary.keys()) != ["summary"]:
+                return False
+            print(summary)            
+            news_info['summary']=summary["summary"]
             return news_info
         
     except Exception as e :
-        print(f"Error Code in get_newsinfo: {response.status_code}")
         print(e)
         return
- 
-        
+
+
 def get_reponseUrl(keyword):
     '''
         ouput : 키워드 검색 시 상위 3개의 기사 추출 (naver api  이용)
@@ -266,8 +111,9 @@ def get_reponseUrl(keyword):
     start = 1
     news = []
     cnt = 0
-    while cnt < news_cnt:
-        
+    for _ in range(10) :
+        if cnt == news_cnt:
+            break
         query = f"?query={encText}&start={start}&display={display}&sort=sim"
         url = "https://openapi.naver.com/v1/search/news" + query
         

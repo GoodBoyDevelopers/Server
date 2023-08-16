@@ -29,9 +29,10 @@ class Article(models.Model):
     thumbnail = models.URLField(null=True, blank=True)
     summary = models.TextField()
     keywords = models.ForeignKey(Keyword, on_delete=models.CASCADE, related_name='articles')
-    
+    origin_link = models.URLField(null=True, blank=True)
+
 
 class Content(models.Model):
     percentage = models.TextField()
     reason = models.TextField()
-    youtube = models.OneToOneField(Youtube, on_delete=models.CASCADE, related_name='contents')
+    article = models.OneToOneField(Article, on_delete=models.CASCADE, related_name='contents')

@@ -53,6 +53,21 @@ def script_extraction(video_id) :
 # TODO LIST
 # 1. 자막 추출 안될 때
 
+def get_video_id(link):
+    video_id = ""
+    l = link.split("v=")
+    if len(l) > 1 :
+        video_id = l[1]
+        return video_id
+    
+    l = link.split(".be/")
+    if len(l) > 1 :
+        video_id = l[1]
+        return video_id
+    
+    return video_id
+                
+
 class ScriptsCreateAPIView(CreateAPIView):
     queryset = Youtube.objects.all()
     serializer_class = YoutubeSerializer
@@ -61,7 +76,9 @@ class ScriptsCreateAPIView(CreateAPIView):
         link = request.data["link"]
         if link:
             # 유튜브 script 추출
-            video_id = link.split("v=")[1]
+            video_id = get_video_id(link)
+            if video_id == "" :
+                return JsonResponse({"message" : "input format error"}, status=400)
             print(video_id)
             script = script_extraction(video_id)
             print(script)
