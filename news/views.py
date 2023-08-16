@@ -63,6 +63,52 @@ def get_summary_article(article):
         print(e)
     return answer
 
+def get_summary_clova(title, article):
+    url = 'https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize'
+
+    headers = {
+        "X-NCP-APIGW-API-KEY-ID": api_key_id,
+        "X-NCP-APIGW-API-KEY":api_key,
+        "Content-Type": "application/json"
+    }
+    
+    # 2000자 미만으로 뉴스 기사 끊기
+    article = cut_article(article)
+
+    # 끊긴 뉴스기사에서 마지막 "." 뒤 내용 자르기
+    index = article.rfind('.')
+    article = article[:index+1]
+
+    data = {}
+    document = {
+            "title": title,
+            "content": article
+    }
+    option = {
+        "language" : "ko",
+        "model": "news",
+        "tone": "0",
+        "summaryCount" : "3"
+    }    
+    
+    data['document'] = document
+    data['option'] = option
+
+    try :
+        response = requests.post(url, data = json.dumps(data), headers=headers)
+        rescode = response.status_code
+        if rescode == 200:
+            print("GET REPONSE FROM CLOVA")    
+            response_body = json.loads(response.text)
+            raw_news = response_body["summary"]
+            raw_news = raw_news.replace('\\', '').replace('\t',' ').replace('\r',' ').replace('\n',' ').replace("\\'", "'").replace('\\"','"')
+            news = ' '.join(raw_news.split())
+            return news
+    except Exception as e :
+        print(f"Summary Error Code: {rescode}")
+        print(e)
+        return False
+
 def get_newsinfo(item):
     '''
         output: 기사 3개 json 형태로 반환
@@ -103,9 +149,8 @@ def get_newsinfo(item):
         # 예외 : 잘 안 뽑혔을 때 ( 아티클 추출 실패 )
         return False
     print(news_info)
-    summary = json.loads(get_summary_article(news_info['article']))
-    if summary == "" or sorted(summary.keys()) != ["summary"]:
-        # 예외 : 뉴스 요약본 안 뽑힐 때
+    summary = get_summary_clova(news_info['title'], news_info['article'])
+    if summary == False or summary == "":
         return False
     print(summary)            
     news_info['summary']=summary["summary"]
