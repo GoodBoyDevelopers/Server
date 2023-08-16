@@ -39,30 +39,6 @@ def cut_article(article) :
     else:
         return article
 
-def get_summary_article(article):
-    print(article)
-    load_dotenv()
-    try :
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        article = cut_article(article)
-        messages = [
-            {"role": "system", "content": "Your role is to summarize the article"},
-            {"role": "user", "content": f"{article}"},
-            {"role": "user", "content": "Summarize this article in Korean. "},
-            {"role": "assistant", "content": "Could you give it in 'JSON format' with 'summary' as key?"}
-        ]
-
-        answer = ""
-        response = openai.ChatCompletion.create(
-            model = "gpt-3.5-turbo",
-            messages = messages,
-            temperature = 0,
-        )
-        answer = response['choices'][0]['message']['content']
-    except Exception as e :
-        print(e)
-    return answer
-
 def get_summary_clova(title, article):
     url = 'https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize'
 
@@ -81,79 +57,28 @@ def get_summary_clova(title, article):
 
     data = {}
     document = {
-            "title": title,
-            "content": article
+        "title": title,
+        "content": article
     }
     option = {
         "language" : "ko",
         "model": "news",
-        "tone": "0",
-        "summaryCount" : "3"
+        "tone": 0,
+        "summaryCount" : 5
     }    
     
     data['document'] = document
     data['option'] = option
 
-    try :
-        response = requests.post(url, data = json.dumps(data), headers=headers)
-        rescode = response.status_code
-        if rescode == 200:
-            print("GET REPONSE FROM CLOVA")    
-            response_body = json.loads(response.text)
-            raw_news = response_body["summary"]
-            raw_news = raw_news.replace('\\', '').replace('\t',' ').replace('\r',' ').replace('\n',' ').replace("\\'", "'").replace('\\"','"')
-            news = ' '.join(raw_news.split())
-            return news
-    except Exception as e :
-        print(f"Summary Error Code: {rescode}")
-        print(e)
+    response = requests.post(url, data = json.dumps(data), headers=headers)
+    if response.status_code != 200 :
         return False
-
-def get_summary_clova(title, article):
-    url = 'https://naveropenapi.apigw.ntruss.com/text-summary/v1/summarize'
-
-    headers = {
-        "X-NCP-APIGW-API-KEY-ID": api_key_id,
-        "X-NCP-APIGW-API-KEY":api_key,
-        "Content-Type": "application/json"
-    }
-    
-    # 2000자 미만으로 뉴스 기사 끊기
-    article = cut_article(article)
-
-    # 끊긴 뉴스기사에서 마지막 "." 뒤 내용 자르기
-    index = article.rfind('.')
-    article = article[:index+1]
-
-    data = {}
-    document = {
-            "title": title,
-            "content": article
-    }
-    option = {
-        "language" : "ko",
-        "model": "news",
-        "tone": "0",
-        "summaryCount" : "3"
-    }    
-    
-    data['document'] = document
-    data['option'] = option
-
-    try :
-        response = requests.post(url, data = json.dumps(data), headers=headers)
-        rescode = response.status_code
-        if rescode == 200:
-            print("GET REPONSE FROM CLOVA")    
-            response_body = json.loads(response.text)
-            raw_news = response_body["summary"]
-            raw_news = raw_news.replace('\\', '').replace('\t',' ').replace('\r',' ').replace('\n',' ').replace("\\'", "'").replace('\\"','"')
-            news = ' '.join(raw_news.split())
-            return news
-    except Exception as e :
-        print(f"Summary Error Code: {rescode}")
-        print(e)
-        return False
+    print("GET REPONSE FROM CLOVA")    
+    response_body = json.loads(response.text)
+    raw_news = response_body["summary"]
+    raw_news = raw_news.replace('\\', '').replace('\t',' ').replace('\r',' ').replace('\n',' ').replace("\\'", "'").replace('\\"','"')
+    news = ' '.join(raw_news.split())
+    return news
 
 def get_newsinfo(item):
     '''
