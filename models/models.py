@@ -34,4 +34,4 @@ class Article(models.Model):
 class Content(models.Model):
     percentage = models.TextField()
     reason = models.TextField()
-    youtube = models.OneToOneField(Youtube, on_delete=models.CASCADE, related_name='contents')
+    article = models.OneToOneField(Article, on_delete=models.CASCADE, related_name='contents')
