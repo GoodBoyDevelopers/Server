@@ -93,7 +93,7 @@ def build_ordinary(soup, origin_link):
         origin_body = soup.find('article',class_='go_trans _article_content')
     except Exception as e :
         print(e)
-        origin_body = ""
+        #origin_body = ""
         return False
 
     # 기사
@@ -102,9 +102,10 @@ def build_ordinary(soup, origin_link):
         article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
         article = ' '.join(article.split())
         article = '. '.join([x.strip() for x in article.split('.')])
+        news_info['article'] = article
     except Exception as e:
         print(e)
-        article= ""
+        #article= ""
         return False
     
     # 여기 아래는 없어도 됨
