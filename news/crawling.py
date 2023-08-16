@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 
 def build_entertain(soup, origin_link):
     news_info = {}
@@ -102,9 +101,9 @@ def build_ordinary(soup, origin_link):
         article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
         article = ' '.join(article.split())
         article = '. '.join([x.strip() for x in article.split('.')])
+        news_info['article'] = article
     except Exception as e:
         print(e)
-        article= ""
         return False
     
     # 여기 아래는 없어도 됨
