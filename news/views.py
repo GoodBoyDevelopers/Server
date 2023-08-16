@@ -169,7 +169,7 @@ class CreateNewsAPIView(generics.CreateAPIView):
         results = ''
         try:
             results=get_reponseUrl(keyword)
-            if results == None :
+            if results == None or results == False:
                 # 크롤링 실패
                 return JsonResponse({"message": "No News"}, status=204)
                 
