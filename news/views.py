@@ -30,7 +30,7 @@ client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
 api_key_id = os.getenv('X_NCP_APIGW_API_KEY_ID')
 api_key = os.getenv('X_NCP_APIGW_API_KEY')
 display = 1
-news_cnt = 1
+news_cnt = 5
 
 def cut_article(article) :
     if len(article) > 2000:
@@ -62,6 +62,8 @@ def get_summary_article(article):
     except Exception as e :
         print(e)
     return answer
+def build_sports(soup, origin_link):
+    pass
 
 def build_entertain(soup, origin_link):
     news_info = {}
@@ -102,7 +104,7 @@ def build_entertain(soup, origin_link):
         img = soup.find('a', class_="press_logo").img['src']
         news_info['newspaper_thumbnail'] =img
     else:
-        news_info['newspaper_thumbnail'] = 'default image'
+        news_info['newspaper_thumbnail'] = 'http://via.placeholder.com/32x32'
 
         
     # 원본 기사 링크
@@ -121,7 +123,7 @@ def build_entertain(soup, origin_link):
             pt.extract() 
         news_info['thumbnail']=thumbnail
     else:
-        news_info['thumbnail'] = 'default image'
+        news_info['thumbnail'] = 'http://via.placeholder.com/32x32'
 
     if origin_body:
         article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
@@ -134,9 +136,6 @@ def build_entertain(soup, origin_link):
     # print("entertain success!",news_info)
     
     return news_info
-
-def build_sports(soup, origin_link):
-    pass
 
 def build_ordinary(soup, origin_link):
     '''
@@ -184,7 +183,7 @@ def build_ordinary(soup, origin_link):
         img = soup.find('a', class_="media_end_head_top_logo").img['src']
         news_info['newspaper_thumbnail'] =img
     else:
-        news_info['newspaper_thumbnail'] = 'default image'
+        news_info['newspaper_thumbnail'] = 'http://via.placeholder.com/32x32'
     
     ''' 
         todo 
@@ -205,7 +204,7 @@ def build_ordinary(soup, origin_link):
             pt.extract() 
         news_info['thumbnail']=thumbnail
     else:
-        news_info['thumbnail'] = 'default image'
+        news_info['thumbnail'] = 'http://via.placeholder.com/32x32'
 
     if origin_body:
         article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
@@ -243,12 +242,13 @@ def get_newsinfo(item):
                 return False
             print(news_info)
             
-            summary = json.loads(get_summary_article(news_info['article']))
-            if summary == "" or sorted(summary.keys()) != ["summary"]:
-                return False
-            print(summary)            
+            # summary = json.loads(get_summary_article(news_info['article']))
+            # if summary == "" or sorted(summary.keys()) != ["summary"]:
+            #     return False
+            # print(summary)            
             
-            news_info['summary']=summary["summary"]
+            # news_info['summary']=summary["summary"]
+            news_info['summary'] = 'summary'
             news_info['origin_link'] = origin_link
             return news_info
         
@@ -285,7 +285,7 @@ def get_reponseUrl(keyword):
                 if (raw['total'] == 0):
                     print("No News")
                     return False
-                print(raw['items'][0]['title'])
+                #print(raw['items'][0]['title'])
                 # naver news 링크 없는 경우 
                 naver_url = "https://n.news.naver.com/mnews/article/"
                 link =  raw["items"][0]["link"]
@@ -310,17 +310,6 @@ def get_reponseUrl(keyword):
     return news
 
 
-def create_news(keyword):
-    try :        
-        news = get_reponseUrl(keyword)
-        # 기사가 없거나 오류가 나면 False를 반환할 것
-        return news
-
-    except Exception as e:
-        #print(e)
-        return Response({"message": "Missing keyword parameter"}, status=400)
-    
-
 class CreateNewsAPIView(generics.CreateAPIView):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
@@ -331,15 +320,16 @@ class CreateNewsAPIView(generics.CreateAPIView):
         print(keywords)
         
         keyword = ' '.join(keywords)
-        results = create_news(keyword)
-        
-        if results == None :
-            # 크롤링 실패
-            return Response({"message" : "crawling failed"}, status=400)
-        elif results == False:
-            # 크롤링할 기사가 없을 때
-            return JsonResponse({"message": "No News"}, status=204)
-        
+        results = ''
+        try:
+            results=get_reponseUrl(keyword)
+            if results == None :
+                # 크롤링 실패
+                return JsonResponse({"message": "No News"}, status=204)
+                
+        except Exception as e:
+            return JsonResponse({"message" : "crawling failed"}, status=400)
+
         for res in results:
             res['keywords']=keyword_id
             serializer = self.get_serializer(data=res)
