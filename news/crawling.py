@@ -1,4 +1,3 @@
-from bs4 import BeautifulSoup
 
 def build_entertain(soup, origin_link):
     news_info = {}
