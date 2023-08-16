@@ -94,7 +94,6 @@ def get_newsinfo(item):
         if (response.status_code != 200):
             return False
         soup = BeautifulSoup(response.text, 'html.parser')
-        print("hi")
         news_info = build_sports(soup, origin_link)
         print(news_info)
     else :
