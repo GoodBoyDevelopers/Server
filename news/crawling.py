@@ -76,11 +76,86 @@ def build_entertain(soup, origin_link):
     except Exception as e:
         news_info['thumbnail'] = 'http://via.placeholder.com/32x32'
 
+
     return news_info
 
 def build_sports(soup, origin_link):
-    pass
+    news_info = {}
+    # 기사 본문
+    try:
+        origin_body = soup.select_one('div #newsEndContents')
+    except Exception as e:
+        print(e)
+        return False
+        
+    article = ""
+    try:
+        article = origin_body.get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
+        article = ' '.join(article.split())
+        article = '. '.join([x.strip() for x in article.split('.')])
+        news_info['article'] = article
+    except Exception as e:
+        print(e)
+        return False
 
+    # 제목
+    try:
+        title = soup.select_one("h4.title").get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
+        news_info['title'] = title
+    except Exception as e: 
+        print(e)
+        news_info['title'] = "title unknown"
+        
+    # 생성일
+    try:
+        created_at = soup.select_one("div.info")
+        news_info['created_at'] = created_at.span.get_text()[5:]
+    except Exception as e:
+        print(e)
+        news_info['created_at'] = 'date unknown'
+
+    #작성자
+    try:
+        writer = soup.select_one("p.byline")
+        writer.get_text().strip().split()[0]  
+    except Exception as e :
+        news_info['writer'] = 'anonymous'
+        print(e)
+    
+    # 원본 기사 링크
+    news_info['origin_link'] = origin_link
+    
+    # 신문사 정보
+    try : 
+        name = soup.find('a', class_="link").img['alt']
+        news_info['newspaper_name'] = name
+    except Exception as e:
+        print(e)
+        news_info['newspaper_name'] = 'newspaper unknown'
+        
+    # 뉴스 썸네일
+    try :    
+        img = soup.find('a', class_="link").img['src']
+        news_info['newspaper_thumbnail'] =img
+    except Exception as e :
+        print(e)
+        news_info['newspaper_thumbnail'] = 'http://via.placeholder.com/32x32'
+        
+        # 그냥 썸네일
+    try :
+        photos = origin_body.find_all(class_="end_photo_org")
+        thumbnail = ""
+        for pt in photos:
+            if thumbnail == "":
+                thumbnail = pt.img['src']
+            pt.extract() 
+        news_info['thumbnail'] = thumbnail
+    except Exception as e :
+        print(e)
+        news_info['thumbnail'] = "http://via.placeholder.com/32x32" 
+        
+    return news_info
+    
 def build_ordinary(soup, origin_link):
     '''
         output: 기사 title, creatd_at, (updated_at), writer, article, newspaper(name, img), thumbnail
