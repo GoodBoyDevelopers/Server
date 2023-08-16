@@ -26,15 +26,12 @@ from .crawling import *
 
 load_dotenv()
 
-CLIENT_ID=os.getenv("X_NAVER_CLIENT_ID")
-CLIENT_SECRET=os.getenv("X_NAVER_CLIENT_SECRET")
-
-START = 1
-DISPLAY = 10
-NEWS_CNT = 3
-GET_CNT = 0
-NAVER_URL = "https://n.news.naver.com/mnews/article/"
-ORDINARY_NEWS = ['100', '101', '102', '103', '104', '105']
+client_id=os.getenv("X_NAVER_CLIENT_ID")
+client_secret=os.getenv("X_NAVER_CLIENT_SECRET")
+api_key_id = os.getenv('X_NCP_APIGW_API_KEY_ID')
+api_key = os.getenv('X_NCP_APIGW_API_KEY')
+display = 1
+news_cnt = 3
 
 def cut_article(article) :
     if len(article) > 2000:
@@ -66,6 +63,9 @@ def get_summary_article(article):
     except Exception as e :
         print(e)
     return answer
+def build_sports(soup, origin_link):
+    pass
+
 
 def get_newsinfo(item):
     '''
@@ -79,82 +79,80 @@ def get_newsinfo(item):
         response = requests.get(naver_url)
         if (response.status_code == 200):
             soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # 뉴스 추출
             if (naver_url[-3:]=='106'):
                 news_info = build_entertain(soup, origin_link)
-            elif naver_url[-3:] in ORDINARY_NEWS :
+            elif naver_url[-3:] in ['100', '101', '102', '103', '104', '105'] :
                 news_info = build_ordinary(soup, origin_link)
             else :
-                return False # 예외 : 뉴스 형식 다를 때
-            
+                # 예외 : 뉴스 형식 다를 때
+                return False
             if news_info == False :
-                return False # 예외 :  Article 추출 실패 
+                # 예외 : 잘 안 뽑혔을 때 ( 아티클 추출 실패 )
+                return False
+            print(news_info)
             
-            
-            # Summary 추출
             summary = json.loads(get_summary_article(news_info['article']))
             if summary == "" or sorted(summary.keys()) != ["summary"]:
-                return False #예외 : Summary 추출 실패        
+                return False
+            print(summary)            
             news_info['summary']=summary["summary"]
-            
-            print(news_info)
             return news_info
         
     except Exception as e :
-        print ("Error Code: ", response.status_code)
         print(e)
         return
 
 
-def get_responseUrl(keyword):
+def get_reponseUrl(keyword):
     '''
         ouput : 키워드 검색 시 상위 3개의 기사 추출 (naver api  이용)
     '''    
     encText=urllib.parse.quote(keyword)
+    start = 1
     news = []
-
-    
-    query = f"?query={encText}&start={START}&display={DISPLAY}&sort=sim"
-    url = "https://openapi.naver.com/v1/search/news" + query
+    cnt = 0
+    for _ in range(10) :
+        if cnt == news_cnt:
+            break
+        query = f"?query={encText}&start={start}&display={display}&sort=sim"
+        url = "https://openapi.naver.com/v1/search/news" + query
         
-    request = urllib.request.Request(url)
-    request.add_header("X-Naver-Client-Id", CLIENT_ID)
-    request.add_header("X-Naver-Client-Secret", CLIENT_SECRET)
-
-    try : 
-        response = urllib.request.urlopen(request)
-        if response.getcode() == 200:
-            response_body = response.read().decode('utf-8')
-            raw = json.loads(response_body)
-            
-            # 관련 검색어로 기사가 없는 경우
-            if (raw['total'] == 0):
-                print("No News")
-                return False
-            
-            for item in raw['items']:
-                # 기사 3개를 찾은 경우
-                if GET_CNT == NEWS_CNT:
-                    break
+        request = urllib.request.Request(url)
+        request.add_header("X-Naver-Client-Id", client_id)
+        request.add_header("X-Naver-Client-Secret", client_secret)
+    
+        try:
+            response = urllib.request.urlopen(request)
+            if response.getcode() == 200:
+                response_body = response.read().decode('utf-8')
+                raw = json.loads(response_body)
                 
-                # naver news 링크 있는 경우 
-                link = item['link']
-                if re.match(NAVER_URL, link):
-                    news_info = get_newsinfo(raw["items"][0])
+                # 관련 검색어로 기사가 없는 경우
+                if (raw['total'] == 0):
+                    print("No News")
+                    return False
+                #print(raw['items'][0]['title'])
+                # naver news 링크 없는 경우 
+                naver_url = "https://n.news.naver.com/mnews/article/"
+                link =  raw["items"][0]["link"]
+                if re.match(naver_url, link):
                     
+                    news_info = get_newsinfo(raw["items"][0])
                     # news 기사나 summary가 없는 경우
                     if news_info == False :
                         continue
-                    GET_CNT = GET_CNT + 1
+                    
+                    cnt += 1
                     news.append(news_info)
-                START = START + 1
-    except Exception as e :
-        print("Error Code in get_reponseUrl: ", response.getcode())
-        print(e)
-        return False
+                    
+                start += 1
+        except Exception as e :
+            rescode = response.getcode()
+            print(f"Error Code in get_reponseUrl: {rescode}")
+            print(e)
+            return False
         
-    # news 반환
+    # print("뉴스 출력 --------------")
     return news
 
 
@@ -168,10 +166,15 @@ class CreateNewsAPIView(generics.CreateAPIView):
         print(keywords)
         
         keyword = ' '.join(keywords)
-        results=get_responseUrl(keyword)
-        # 크롤링 실패
-        if results == False:
-            return JsonResponse({"message": "No News"}, status=204)
+        results = ''
+        try:
+            results=get_reponseUrl(keyword)
+            if results == None or results == False:
+                # 크롤링 실패
+                return JsonResponse({"message": "No News"}, status=204)
+                
+        except Exception as e:
+            return JsonResponse({"message" : "crawling failed"}, status=400)
 
         for res in results:
             res['keywords']=keyword_id
