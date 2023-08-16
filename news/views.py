@@ -16,7 +16,7 @@ from models.models import Article, Keyword
 from .serializers import ArticleSerializer
 
 import openai
-from .crawling import *
+from .crawling import build_entertain, build_ordinary, build_sports
 
 '''
     keyword 당 관련성 높은 기사 3개의 content, originalLink, summary
@@ -62,9 +62,6 @@ def get_summary_article(article):
     except Exception as e :
         print(e)
     return answer
-def build_sports(soup, origin_link):
-    pass
-
 
 def get_newsinfo(item):
     '''
@@ -75,7 +72,7 @@ def get_newsinfo(item):
     print(link)
     naver_url = "https://n.news.naver.com/mnews/article/"
     sports_url = "https://sports.news.naver.com/news"
-
+    
     if re.match(naver_url, link):
         response = requests.get(link)
         if (response.status_code != 200):
@@ -99,6 +96,7 @@ def get_newsinfo(item):
         soup = BeautifulSoup(response.text, 'html.parser')
         print("hi")
         news_info = build_sports(soup, origin_link)
+        print(news_info)
     else :
         # 예외 : 뉴스 형식 다를 때
         return False
@@ -151,7 +149,7 @@ def get_news(keyword):
         return False
     response_body = response.read().decode('utf-8')
     raws = json.loads(response_body)
-    print(raws)
+    #print(raws)
     if (raws['total'] == 0):
         return False
     news = extract_news(raws["items"])

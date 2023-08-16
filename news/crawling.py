@@ -76,15 +76,17 @@ def build_entertain(soup, origin_link):
     except Exception as e:
         news_info['thumbnail'] = 'http://via.placeholder.com/32x32'
 
+
     return news_info
 
 def build_sports(soup, origin_link):
     news_info = {}
     # 기사 본문
     try:
-        origin_body = soup.find('div', class_="news_end font1 size3")
+        origin_body = soup.select_one('div #newsEndContents')
     except Exception as e:
         print(e)
+        return False
         
     article = ""
     try:
@@ -95,7 +97,6 @@ def build_sports(soup, origin_link):
     except Exception as e:
         print(e)
         return False
-    
     # 제목
     try:
         title = soup.select_one("h4.title").get_text().replace('\n', ' ').replace("\t"," ").replace("\r"," ").replace("\\'", "'").replace('\\"','"').replace("\\", "")
@@ -153,7 +154,7 @@ def build_sports(soup, origin_link):
         news_info['thumbnail'] = "http://via.placeholder.com/32x32" 
         
     return news_info
-
+    
 def build_ordinary(soup, origin_link):
     '''
         output: 기사 title, creatd_at, (updated_at), writer, article, newspaper(name, img), thumbnail
