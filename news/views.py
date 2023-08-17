@@ -65,8 +65,6 @@ def get_summary_clova(title, article):
         "model": "news",
         "tone": 0,
         "summaryCount" : 5
-        "tone": 0,
-        "summaryCount" : 5
     }    
     
     data['document'] = document
