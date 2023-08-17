@@ -101,14 +101,19 @@ import requests
 from bs4 import BeautifulSoup
 
 def get_youtube_title(video_url):
-    response = requests.get(video_url)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.content, 'html.parser')
-        title_tag = soup.find("meta", property="og:title")
-        if title_tag:
-            video_title = title_tag.get("content")
-            return video_title
-    return ""
+    try:
+        response = requests.get(video_url)
+        response.raise_for_status()
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.content, 'html.parser')
+            title_tag = soup.find("meta", property="og:title")
+            if title_tag:
+                video_title = title_tag.get("content")
+                return video_title
+        return ""
+    except Exception as e:
+        print(e)
+        return ""
 
 class KeywordCreateAPIView(CreateAPIView):
     queryset = Keyword.objects.all()
