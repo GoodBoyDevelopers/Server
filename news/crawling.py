@@ -57,7 +57,7 @@ def build_entertain(soup, origin_link):
         news_info['newspaper_thumbnail'] =img
     except Exception as e :
         print(e)
-        news_info['newspaper_thumbnail'] = 'http://via.placeholder.com/32x32'
+        news_info['newspaper_thumbnail'] = ""
 
     # 원본 기사 링크
     news_info['origin_link'] = origin_link
@@ -70,11 +70,9 @@ def build_entertain(soup, origin_link):
             if thumbnail == "":
                 thumbnail = pt.img['src']
             pt.extract() 
-        if thumbnail == "" :
-            thumbnail = 'http://via.placeholder.com/32x32'
         news_info['thumbnail']=thumbnail
     except Exception as e:
-        news_info['thumbnail'] = 'http://via.placeholder.com/32x32'
+        news_info['thumbnail'] = ""
 
 
     return news_info
@@ -138,9 +136,9 @@ def build_sports(soup, origin_link):
         news_info['newspaper_thumbnail'] =img
     except Exception as e :
         print(e)
-        news_info['newspaper_thumbnail'] = 'http://via.placeholder.com/32x32'
+        news_info['newspaper_thumbnail'] = ""
         
-        # 그냥 썸네일
+    # 그냥 썸네일
     try :
         photos = origin_body.find_all(class_="end_photo_org")
         thumbnail = ""
@@ -151,7 +149,7 @@ def build_sports(soup, origin_link):
         news_info['thumbnail'] = thumbnail
     except Exception as e :
         print(e)
-        news_info['thumbnail'] = "http://via.placeholder.com/32x32" 
+        news_info['thumbnail'] = "" 
         
     return news_info
     
@@ -223,7 +221,7 @@ def build_ordinary(soup, origin_link):
         news_info['newspaper_thumbnail'] =img
     except Exception as e :
         print(e)
-        news_info['newspaper_thumbnail'] = 'http://via.placeholder.com/32x32'
+        news_info['newspaper_thumbnail'] = ""
 
     # 그냥 썸네일
     try :
@@ -236,7 +234,7 @@ def build_ordinary(soup, origin_link):
         news_info['thumbnail'] = thumbnail
     except Exception as e :
         print(e)
-        news_info['thumbnail'] = "http://via.placeholder.com/32x32" 
+        news_info['thumbnail'] = "" 
 
     return news_info
 
