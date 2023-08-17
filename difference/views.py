@@ -78,7 +78,7 @@ class ContentCreateAPIView(CreateAPIView):
 
         content = get_difference(youtube_scirpts, article_scirpts)
 
-        data = json.loads(content)
+        data = json.loads(content) 
         if data == "" or sorted(data.keys()) != ["percentage", "reason"]:
             return JsonResponse({"message" : "Difference Extraction Failed"}, status=400)
 
