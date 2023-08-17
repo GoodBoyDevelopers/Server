@@ -13,7 +13,7 @@ from models.models import *
 from .serializers import *
 
 
-def get_difference(scripts, article) :
+def get_difference(youtube_scripts, article_scripts) :
     load_dotenv()
     try :
         openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -26,8 +26,8 @@ def get_difference(scripts, article) :
                 비슷하지 않다면 과감하게 낮은 유사도로 응답해줘.
                 또 너의 답변이 모두 한국어로 되어 있어야 한다는 것을 명심해.
              """},
-            {"role": "user", "content": f"여기 유튜브 영상에 대한 요약 있어: {scripts}"},
-            {"role": "user", "content": f"이거는 기사에 대한 요약이야: {article.summary}"},
+            {"role": "user", "content": f"여기 유튜브 영상에 대한 요약 있어: {youtube_scripts}"},
+            {"role": "user", "content": f"이거는 기사에 대한 요약이야: {article_scripts}"},
             {"role": "user", "content": "유튜브 영상에 대한 요약과 기사에 대한 요약의 유사도 백분율과, 그에 대한 이유를 작성해줘"},
             {"role": "assistant", "content": "'percentage'와'reason'을 key로 가지는 JSON 형식으로 줘"}
         ]
@@ -43,31 +43,51 @@ def get_difference(scripts, article) :
     return answer
 
 
+def cut_article(article) :
+    if len(article) > 1500:
+        truncated_string = article[:1500]
+        return truncated_string
+    else:
+        return article
+
 class ContentCreateAPIView(CreateAPIView):
     queryset = Content
     serializer_class = ContentSerializer
 
     def create(self, request, *args, **kwargs):
-        youtube_id = request.data.get("id")
-        keyword = Keyword.objects.get(youtube=youtube_id)
-        summary = keyword.summary
-
-        articles = Article.objects.filter(keywords=keyword.id)
-        for article in articles:
-            content = get_difference(summary, article)
-
-            data = json.loads(content)
-            if data == "" or sorted(data.keys()) != ["percentage", "reason"]:
-                return JsonResponse({"message" : "Summary Keywords Extraction Failed"}, status=400)
+        youtube_id = request.data["youtube_id"]
+        article_id = request.data["article_id"]
+        # 있으면 그냥 쓰기
+        if Content.objects.filter(article=article_id).exists() :
+            content = Content.objects.get(article=article_id)
+            serializer = ContentSerializer(content)
+            return Response(serializer.data, status=status.HTTP_200_OK) 
             
-            if str(data['percentage'])[-1] != '%':
-                data['percentage'] = str(data['percentage']) + '%'
-            data['article'] = article.id
-            
-            serializer = self.get_serializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
-        
-        contents = Content.objects.filter(article__in=articles)
-        serializer = ContentSerializer(contents, many=True)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # youtube scripts 불러오기
+        try :
+            youtube_scirpts = Script.objects.get(youtube=youtube_id).script
+        except Exception as e :
+            return JsonResponse({"message" : "Youtube Input Error"}, status=400)
+        youtube_scirpts = cut_article(youtube_scirpts)
+        # article scripts 불러오기
+        try :
+            article_scirpts = Article.objects.get(id=article_id).article
+        except Exception as e :
+            return JsonResponse({"message" : "Article Input Error"}, status=400)
+        article_scirpts = cut_article(article_scirpts)
+
+        content = get_difference(youtube_scirpts, article_scirpts)
+
+        data = json.loads(content)
+        if data == "" or sorted(data.keys()) != ["percentage", "reason"]:
+            return JsonResponse({"message" : "Difference Extraction Failed"}, status=400)
+
+        if str(data['percentage'])[-1] != '%':
+            data['percentage'] = str(data['percentage']) + '%'
+        data['article'] = article_id
+        serializer = self.get_serializer(data=data)
+        print(data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
