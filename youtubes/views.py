@@ -13,14 +13,15 @@ from models.models import *
 from .serializers import *
 
 
-def get_summary_keywords(scripts) :
+def get_summary_keywords(scripts, title) :
     load_dotenv()
     try :
         openai.api_key = os.getenv("OPENAI_API_KEY")
         messages = [
             {"role": "system", "content": "Your role is to summarize the article, extract keywords, and respond appropriately to the format."},
             {"role": "system", "content": "I'm trying to search for articles using the Naver API through the very keywords you extracted. Can you extract keywords by referring to this point?"},
-            {"role": "user", "content": f"{scripts}"},
+            {"role": "user", "content": f"title: {title}"},
+            {"role": "user", "content": f"scripts: {scripts}"},
             {"role": "user", "content": "Summarize this article in Korean. Additionally extract up to three keywords from the article in Korean"},
             {"role": "assistant", "content": "Could you give it in JSON format with 'summary' and 'keywords' as key?"}
         ]
@@ -41,6 +42,8 @@ def script_extraction(video_id) :
     scripts = ""
     try:
         srt = YouTubeTranscriptApi.get_transcript(video_id, languages=['ko'])
+        print(srt)
+
         for s in srt :
             cleaned_s = s["text"].replace("''", "")
             scripts += cleaned_s
@@ -66,7 +69,8 @@ def get_video_id(link):
         return video_id
     
     return video_id
-                
+
+
 
 class ScriptsCreateAPIView(CreateAPIView):
     queryset = Youtube.objects.all()
@@ -93,6 +97,18 @@ class ScriptsCreateAPIView(CreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         return JsonResponse({"message" : "No Link"}, status=400)
 
+import requests
+from bs4 import BeautifulSoup
+
+def get_youtube_title(video_url):
+    response = requests.get(video_url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.content, 'html.parser')
+        title_tag = soup.find("meta", property="og:title")
+        if title_tag:
+            video_title = title_tag.get("content")
+            return video_title
+    return ""
 
 class KeywordCreateAPIView(CreateAPIView):
     queryset = Keyword.objects.all()
@@ -108,8 +124,10 @@ class KeywordCreateAPIView(CreateAPIView):
                 serializer = KeywordSerializer(keyword)
                 return Response(serializer.data, status=status.HTTP_200_OK) 
             script=Script.objects.get(youtube=youtube).script
-            print(script)
-            data = json.loads(get_summary_keywords(script))
+            link = youtube.link
+            title = get_youtube_title(link)
+            print(title)
+            data = json.loads(get_summary_keywords(script, title))
             print(data)
             if data == "" or sorted(data.keys()) != ["keywords", "summary"]:
                 return JsonResponse({"message" : "Summary Keywords Extraction Failed"}, status=400)
