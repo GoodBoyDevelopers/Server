@@ -44,8 +44,8 @@ def get_difference(youtube_scripts, article_scripts) :
 
 
 def cut_article(article) :
-    if len(article) > 1000:
-        truncated_string = article[:1000]
+    if len(article) > 1500:
+        truncated_string = article[:1500]
         return truncated_string
     else:
         return article
